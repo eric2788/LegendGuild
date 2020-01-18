@@ -1,0 +1,20 @@
+maxLevel: 100
+maxExp: "%level * %level%"
+maxChar: 6
+skillUpdate: "%level% * 5"
+
+dailyContribution:
+  money:
+    need: 1000.0
+    exp: 10.0
+    contrubute: 100
+  points:
+    need: 100.0
+    exp: 20.0
+    contrubute: 200
+
+postResources:
+  money: 1000.0
+  money_contribute: 10
+  items:
+    pistil: 500
