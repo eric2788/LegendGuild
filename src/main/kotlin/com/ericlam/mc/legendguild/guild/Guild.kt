@@ -4,18 +4,17 @@ import com.ericlam.mc.kotlib.config.dao.DataFile
 import com.ericlam.mc.kotlib.config.dao.DataResource
 import com.ericlam.mc.kotlib.config.dao.PrimaryKey
 import com.ericlam.mc.legendguild.GuildSkill
+import com.ericlam.mc.legendguild.JavaScript
 import com.ericlam.mc.legendguild.LegendGuild
-import org.bukkit.Bukkit
 import org.bukkit.OfflinePlayer
 import java.util.*
-import javax.script.ScriptEngineManager
 
 @DataResource(folder = "GuildData")
 data class Guild(
         @PrimaryKey val name: String,
         private var level: Int = 0,
         private var exp: Double = 0.0,
-        val skills: MutableMap<GuildSkill, Int> = GuildSkill.values().map { it to 0 }.toMap().toMutableMap(),
+        private val skills: MutableMap<GuildSkill, Int> = GuildSkill.values().map { it to 0 }.toMap().toMutableMap(),
         val resource: Resource
 ) : DataFile, Comparable<Guild> {
 
@@ -27,8 +26,7 @@ data class Guild(
 
     val maxExp: Int
         get() {
-            val s = ScriptEngineManager().getEngineByName("JavaScript")
-            return s.eval(LegendGuild.config.maxExp.replace("%level%", level.toString())) as Int
+            return JavaScript.eval(LegendGuild.config.maxExp.replace("%level%", level.toString())) as Int
         }
 
     val currentLevel: Int
@@ -40,7 +38,7 @@ data class Guild(
             this.exp -= maxExp
             level++
         }
-        while (this.exp < 0){
+        while (this.exp < 0) {
             level--
             this.exp += maxExp
         }
@@ -51,12 +49,20 @@ data class Guild(
         this.exp = 0.0
     }
 
+    fun save() {
+        LegendGuild.guildController.save { this }
+    }
 
-    fun skillLevel(skill: GuildSkill, level: Int) {
+    fun percentage(skill: GuildSkill): Double {
+        val level = skills[skill] ?: 0
+        return JavaScript.eval(LegendGuild.config.skillUpdate.replace("%level%", level.toString())) as Double / 100
+    }
+
+    fun setSkillLevel(skill: GuildSkill, level: Int) {
         skills[skill]?.let { it + level }.also { skills[skill] = (it ?: level) }
     }
 
-    enum class JoinResponse{
+    enum class JoinResponse {
         FULL,
         ALREADY_IN_SAME_GUILD,
         ALREADY_IN_OTHER_GUILD,
@@ -64,7 +70,7 @@ data class Guild(
     }
 
     infix fun join(player: OfflinePlayer): JoinResponse {
-        with(LegendGuild.guildPlayerController){
+        with(LegendGuild.guildPlayerController) {
             val gplayer = findById(player.uniqueId)
             return when {
                 gplayer?.guild == name -> JoinResponse.ALREADY_IN_SAME_GUILD

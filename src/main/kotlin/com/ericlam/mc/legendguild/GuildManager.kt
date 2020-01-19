@@ -1,7 +1,6 @@
 package com.ericlam.mc.legendguild
 
 import com.ericlam.mc.legendguild.guild.Guild
-import com.ericlam.mc.legendguild.guild.GuildPlayer
 import org.bukkit.Material
 import org.bukkit.OfflinePlayer
 import org.bukkit.entity.Player
@@ -11,15 +10,16 @@ object GuildManager {
 
     enum class ContributeResponse {
         NOT_IN_GUILD,
-        FAILED,
-        SUCCESS
+        NOT_ENOUGH_MONEY,
+        SUCCESS,
+        ALREADY_DID_TODAY
     }
 
     enum class ResourceResponse {
         NOT_IN_GUILD,
         INVALID_ITEM,
         NOT_ENOUGH_MONEY,
-        SUCCESS
+        SUCCESS,
     }
 
     enum class ResourceType {
@@ -30,58 +30,81 @@ object GuildManager {
     private val guildMap: List<Guild>
         get() = LegendGuild.guildController.findAll()
 
-    val ranking: SortedSet<Guild>
+    val leaderBoard: SortedSet<Guild>
         get() = guildMap.toSortedSet()
 
     operator fun get(name: String): Guild? {
-        return guildMap.find { it.name == name }
+        return LegendGuild.guildController.findById(name)
     }
 
     operator fun get(uuid: UUID): Guild? {
         return guildMap.find { it.isMember(uuid) }
     }
 
-    fun getPlayer(uuid: UUID): GuildPlayer?{
-        return LegendGuild.guildPlayerController.findById(uuid)
+    enum class SalaryResponse {
+        NOT_IN_GUILD,
+        ROLE_NO_SALARIES,
+        ALREADY_GET_TODAY,
+        SUCCESS,
+        SUCCESS_NEGATIVE,
+        FAILED
     }
 
+    fun sendSalary(player: OfflinePlayer): SalaryResponse {
+        val g = player.guild ?: return SalaryResponse.NOT_IN_GUILD
+        val p = player.guildPlayer ?: return SalaryResponse.NOT_IN_GUILD
+        if (!p.canGetSalary) return SalaryResponse.ALREADY_GET_TODAY
+        else {
+            val salary = LegendGuild.config.salaries[p.role] ?: return SalaryResponse.ROLE_NO_SALARIES
+            return if (LegendGuild.economy.depositPlayer(player, salary).transactionSuccess()) {
+                g.resource.money -= salary
+                if (g.resource.money < 0) SalaryResponse.SUCCESS_NEGATIVE else SalaryResponse.SUCCESS
+            } else {
+                SalaryResponse.FAILED
+            }
+        }
+    }
 
     fun contributeMoney(player: OfflinePlayer): ContributeResponse {
-        val g = this[player.uniqueId] ?: return ContributeResponse.NOT_IN_GUILD
-        val p = g[player.uniqueId]!!
+        val g = player.guild ?: return ContributeResponse.NOT_IN_GUILD
+        val p = player.guildPlayer ?: return ContributeResponse.NOT_IN_GUILD
+        if (!p.canContribute) return ContributeResponse.ALREADY_DID_TODAY
         with(LegendGuild) {
             return if (economy.withdrawPlayer(player, config.dailyContribution.money.need).transactionSuccess()) {
                 p.contribution += config.dailyContribution.money.contribute
                 g exp config.dailyContribution.money.exp
+                p.setLastContribute()
                 ContributeResponse.SUCCESS
             } else {
-                ContributeResponse.FAILED
+                ContributeResponse.NOT_ENOUGH_MONEY
             }
         }
     }
 
     fun contributePoints(player: OfflinePlayer): ContributeResponse {
         val g = this[player.uniqueId] ?: return ContributeResponse.NOT_IN_GUILD
-        val p = g[player.uniqueId]!!
+        val p = g[player.uniqueId] ?: return ContributeResponse.NOT_IN_GUILD
+        if (!p.canContribute) return ContributeResponse.ALREADY_DID_TODAY
         with(LegendGuild) {
             return if (pointsAPI.take(player.uniqueId, config.dailyContribution.points.need.toInt())) {
                 p.contribution += config.dailyContribution.points.contribute
                 g exp config.dailyContribution.points.exp
+                p.setLastContribute()
                 ContributeResponse.SUCCESS
             } else {
-                ContributeResponse.FAILED
+                ContributeResponse.NOT_ENOUGH_MONEY
             }
         }
     }
 
     fun postResource(player: Player, type: ResourceType): ResourceResponse {
         val g = this[player.uniqueId] ?: return ResourceResponse.NOT_IN_GUILD
-        val p = g[player.uniqueId]!!
+        val p = g[player.uniqueId] ?: return ResourceResponse.NOT_IN_GUILD
         with(LegendGuild) {
             return when (type) {
                 ResourceType.MONEY -> if (economy.withdrawPlayer(player, config.postResources.money).transactionSuccess()) {
                     g.resource.money += config.postResources.money
-                    g[player.uniqueId]?.let { it.contribution += config.postResources.money_contribute }
+                    p.contribution += config.postResources.money_contribute
                     ResourceResponse.SUCCESS
                 } else {
                     ResourceResponse.NOT_ENOUGH_MONEY

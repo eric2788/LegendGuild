@@ -6,13 +6,17 @@ import com.ericlam.mc.kotlib.kClassOf
 import com.ericlam.mc.legendguild.config.Config
 import com.ericlam.mc.legendguild.config.Items
 import com.ericlam.mc.legendguild.config.Lang
-import com.ericlam.mc.legendguild.guild.Guild
 import com.ericlam.mc.legendguild.guild.GuildController
-import com.ericlam.mc.legendguild.guild.GuildPlayer
 import com.ericlam.mc.legendguild.guild.GuildPlayerController
 import net.milkbowl.vault.economy.Economy
 import org.black_ixx.playerpoints.PlayerPoints
 import org.black_ixx.playerpoints.PlayerPointsAPI
+import org.bukkit.entity.Player
+import org.bukkit.entity.Projectile
+import org.bukkit.entity.TNTPrimed
+import org.bukkit.event.entity.EntityDamageByEntityEvent
+import org.bukkit.event.entity.EntityDamageEvent
+import java.text.MessageFormat
 
 
 class LegendGuild : BukkitPlugin() {
@@ -56,7 +60,33 @@ class LegendGuild : BukkitPlugin() {
         val rsp = server.servicesManager.getRegistration(Economy::class.java)
         _econmony = rsp.provider
         _pointsApi = getPlugin(PlayerPoints::class.java).api
+
+        registerListeners()
     }
 
+
+    private fun registerListeners() {
+        listen<EntityDamageByEntityEvent> {
+            val killer = when (it.entity) {
+                is Player -> it.entity as Player
+                is Projectile -> (it.entity as Projectile).shooter as? Player ?: return@listen
+                is TNTPrimed -> (it.entity as TNTPrimed).source as? Player ?: return@listen
+                else -> return@listen
+            }
+            val guild = killer.guild ?: return@listen
+            val damagePlus = guild.percentage(GuildSkill.AZURE_DRAGON)
+            it.damage += it.damage * damagePlus
+            val critical = guild.percentage(GuildSkill.VERMILION_BIRD) * 100
+            if ((0..100).random() < critical) {
+                val extra = it.damage * guild.percentage(GuildSkill.WHITE_TIGER)
+                killer.sendMessage(MessageFormat.format(lang["damage-critical"], extra))
+                it.damage += extra
+            }
+        }
+
+        listen<EntityDamageEvent> {
+            val player = it.entity as? Player ?: return@listen
+        }
+    }
 
 }

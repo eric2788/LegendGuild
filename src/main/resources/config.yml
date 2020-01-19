@@ -18,3 +18,18 @@ postResources:
   money_contribute: 10
   items:
     pistil: 500
+
+
+salaries:
+  CO_POPE: 5000
+  ELDER: 3000
+  CO_ELDER: 2000
+  DISCIPLE: 1000
+  OUT_DISCIPLE: 500
+
+default_salaries:
+  CO_POPE: 5000
+  ELDER: 3000
+  CO_ELDER: 2000
+  DISCIPLE: 1000
+  OUT_DISCIPLE: 500

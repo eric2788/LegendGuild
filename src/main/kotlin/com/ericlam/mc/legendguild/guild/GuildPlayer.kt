@@ -6,6 +6,9 @@ import com.ericlam.mc.kotlib.config.dao.PrimaryKey
 import com.ericlam.mc.legendguild.LegendGuild
 import org.bukkit.Bukkit
 import org.bukkit.OfflinePlayer
+import java.sql.Timestamp
+import java.time.Duration
+import java.time.LocalDateTime
 import java.util.*
 
 @DataResource(folder = "PlayerData")
@@ -14,7 +17,10 @@ data class GuildPlayer(
         var name: String,
         val guild: String,
         var contribution: Int = 0,
-        var role: Role = Role.OUT_DISCIPLE
+        var role: Role = Role.OUT_DISCIPLE,
+        private var last_contribute: Long = 0,
+        private var last_salary: Long = 0,
+        private val quests: MutableMap<String, Long> = mutableMapOf()
 ) : DataFile {
 
     enum class Role(val ch: String) {
@@ -25,20 +31,32 @@ data class GuildPlayer(
         DISCIPLE("內門弟子"),
         OUT_DISCIPLE("外門弟子");
 
-        companion object Factory{
-            fun fromName(name: String): Role?{
+        companion object Factory {
+            fun fromName(name: String): Role? {
                 return values().find { it.ch == name }
             }
         }
     }
 
+    val canGetSalary: Boolean
+        get() = Duration.between(Timestamp(last_salary).toLocalDateTime(), LocalDateTime.now()).toDays() > 0 && LegendGuild.config.salaries.containsKey(role)
+
+    fun setLastSalary() {
+        this.last_salary = System.currentTimeMillis()
+    }
+
+    val canContribute: Boolean
+        get() = Duration.between(Timestamp(last_contribute).toLocalDateTime(), LocalDateTime.now()).toDays() > 0
+
+    fun setLastContribute() {
+        this.last_contribute = System.currentTimeMillis()
+    }
+
     val player: OfflinePlayer
         get() = Bukkit.getOfflinePlayer(uuid)
 
-    infix fun consume(price: Int): Boolean{
+    infix fun consume(price: Int): Boolean {
         return contribution.takeUnless { it < price }?.let { contribution -= price }?.let { true } ?: false
     }
-
-    fun leave(): Boolean = LegendGuild.guildPlayerController.delete(uuid)
 
 }
