@@ -36,11 +36,58 @@ object UIManager {
                 lore = listOf("點擊打開")
         )
 
+        object Contribute {
+            val money = p.itemStack(
+                    material = Material.GOLD_BLOCK,
+                    display = "&e金錢貢獻",
+                    lore = with(LegendGuild.config.dailyContribution.money) {
+                        listOf(
+                                "將花費金錢 $$need",
+                                "以獲得 $contribute 貢獻",
+                                "及 $exp 經驗值"
+                        )
+                    }
+            )
+
+            val points = p.itemStack(
+                    material = Material.PAPER,
+                    display = "&b點卷貢獻",
+                    lore = with(LegendGuild.config.dailyContribution.points) {
+                        listOf(
+                                "將花費點卷 $need",
+                                "以獲得 $contribute 貢獻",
+                                "及 $exp 經驗值"
+                        ).map { "&e$it" }
+                    }
+            )
+        }
+
         val postResources = p.itemStack(
                 material = Material.EMERALD,
                 display = "&e捐贈資源",
                 lore = listOf("點擊打開")
         )
+
+        object Resources {
+            val money = p.itemStack(
+                    material = Material.GOLD_BLOCK,
+                    display = "&6金錢捐贈",
+                    lore = with(LegendGuild.config.postResources) {
+                        listOf(
+                                "將花費 $$money",
+                                "來獲得 $money_contribute 貢獻值"
+                        ).map { "&e$it" }
+                    }
+            )
+
+            val item = p.itemStack(
+                    material = Material.STONE,
+                    display = "&e捐贈道具",
+                    lore = with(LegendGuild.config.postResources) {
+                        listOf("&e可捐贈道具及貢獻值獎勵如下:") + items.map { "&b${it.key} &7- &6$${it.value}" }
+                    }
+            )
+        }
 
         val quest = p.itemStack(
                 material = Material.NAME_TAG,
@@ -134,10 +181,12 @@ object UIManager {
                     4 row 5 to Clicker(SingleItem.pvp),
                     4 row 6 to Clicker(SingleItem.leave)
             ).toMutableMap().apply {
-                if (player.role == GuildPlayer.Role.POPE) {
-
+                if (player.role hasPower GuildPlayer.Role.ELDER) {
+                    this += 4 row 7 to Clicker(SingleItem.joinerList)
                 }
-
+                if (player.role hasPower GuildPlayer.Role.CO_POPE) {
+                    this += 4 row 8 to Clicker(SingleItem.salarySet)
+                }
             }
         }
     }

@@ -36,6 +36,10 @@ data class GuildPlayer(
                 return values().find { it.ch == name }
             }
         }
+
+        infix fun hasPower(o: Role): Boolean {
+            return o.ordinal >= this.ordinal
+        }
     }
 
     val canGetSalary: Boolean
