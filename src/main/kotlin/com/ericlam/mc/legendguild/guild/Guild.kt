@@ -32,6 +32,9 @@ data class Guild(
     val currentLevel: Int
         get() = level
 
+    val currentExp: Double
+        get() = exp
+
     infix fun exp(exp: Double) {
         this.exp += exp
         while (this.exp >= maxExp) {

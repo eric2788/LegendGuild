@@ -9,3 +9,5 @@ did-today: "you already did today! please wait for tmr"
 guild-deleted: "the guild has deleted so you are not in guild anymore"
 success-negative: "operation success, but the guild money are lower than zero."
 damage-critical: "發動 <朱雀白虎之詩> 額外造成傷害: {0}"
+item-translate:
+  pistil: "天地之蕊"

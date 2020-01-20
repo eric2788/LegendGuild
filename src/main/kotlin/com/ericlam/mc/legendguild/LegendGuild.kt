@@ -86,6 +86,8 @@ class LegendGuild : BukkitPlugin() {
 
         listen<EntityDamageEvent> {
             val player = it.entity as? Player ?: return@listen
+            val guild = player.guild ?: return@listen
+            it.damage -= it.damage * guild.percentage(GuildSkill.BLACK_TORTOISE)
         }
     }
 
