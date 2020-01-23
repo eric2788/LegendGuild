@@ -3,12 +3,13 @@ package com.ericlam.mc.legendguild.ui.factory
 import com.ericlam.mc.kotlib.Clicker
 import com.ericlam.mc.kotlib.row
 import com.ericlam.mc.legendguild.GuildManager
+import com.ericlam.mc.legendguild.Lang
 import com.ericlam.mc.legendguild.LegendGuild
 import com.ericlam.mc.legendguild.guild
 import com.ericlam.mc.legendguild.guild.Guild
 import com.ericlam.mc.legendguild.ui.UIManager.p
 import org.bukkit.Material
-import org.bukkit.entity.Player
+import org.bukkit.OfflinePlayer
 import org.bukkit.inventory.Inventory
 import java.util.concurrent.ConcurrentHashMap
 
@@ -38,7 +39,7 @@ object ResourcesUI : UIFactory {
 
     override val guildInvCaches: MutableMap<Guild, Inventory> = ConcurrentHashMap()
 
-    override fun getUI(bPlayer: Player): Inventory? {
+    override fun getUI(bPlayer: OfflinePlayer): Inventory? {
         val guild = bPlayer.guild ?: return null
         return guildInvCaches[guild] ?: let {
             p.createGUI(
@@ -47,11 +48,11 @@ object ResourcesUI : UIFactory {
                 mapOf(
                         2 row 3 to Clicker(money) { player, _ ->
                             val res = GuildManager.postResource(player, GuildManager.ResourceType.MONEY)
-                            player.sendMessage(LegendGuild.lang[getPath(res)])
+                            player.sendMessage(Lang[getPath(res)])
                         },
                         2 row 7 to Clicker(item) { player, _ ->
                             val res = GuildManager.postResource(player, GuildManager.ResourceType.ITEM)
-                            player.sendMessage(LegendGuild.lang[getPath(res)])
+                            player.sendMessage(Lang[getPath(res)])
                         }
                 )
             }
@@ -77,7 +78,7 @@ object ResourcesUI : UIFactory {
                 lore = listOf(
                         "&6金錢 $${guild.resource.money}",
                         "&e道具資源:"
-                ) + guild.resource.items.map { "${LegendGuild.lang["item-translate.${it.key}"]}: ${it.value} 個" }.toList()
+                ) + guild.resource.items.map { "${Lang.Item[it.key]}: ${it.value} 個" }.toList()
         )
         inventory.setItem(1 row 5, info)
     }

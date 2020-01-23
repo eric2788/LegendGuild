@@ -6,7 +6,6 @@ import com.ericlam.mc.kotlib.config.dao.PrimaryKey
 import com.ericlam.mc.legendguild.GuildSkill
 import com.ericlam.mc.legendguild.JavaScript
 import com.ericlam.mc.legendguild.LegendGuild
-import org.bukkit.OfflinePlayer
 import java.util.*
 
 @DataResource(folder = "GuildData")
@@ -15,7 +14,10 @@ data class Guild(
         private var level: Int = 0,
         private var exp: Double = 0.0,
         private val skills: MutableMap<GuildSkill, Int> = GuildSkill.values().map { it to 0 }.toMap().toMutableMap(),
+        var public: Boolean = true,
         val salaries: MutableMap<GuildPlayer.Role, Double> = LegendGuild.config.default_salaries,
+        val wannaJoins: MutableList<UUID> = mutableListOf(),
+        val invites: MutableSet<UUID> = mutableSetOf(),
         val resource: Resource
 ) : DataFile, Comparable<Guild> {
 
@@ -60,29 +62,6 @@ data class Guild(
 
     fun setSkillLevel(skill: GuildSkill, level: Int) {
         skills[skill]?.let { it + level }.also { skills[skill] = (it ?: level) }
-    }
-
-    enum class JoinResponse {
-        FULL,
-        ALREADY_IN_SAME_GUILD,
-        ALREADY_IN_OTHER_GUILD,
-        SUCCESS
-    }
-
-    infix fun join(player: OfflinePlayer): JoinResponse {
-        with(LegendGuild.guildPlayerController) {
-            val gplayer = findById(player.uniqueId)
-            return when {
-                gplayer?.guild == name -> JoinResponse.ALREADY_IN_SAME_GUILD
-                gplayer != null -> JoinResponse.ALREADY_IN_OTHER_GUILD
-                memberMax <= members.size -> JoinResponse.FULL
-                else -> {
-                    save { GuildPlayer(player.uniqueId, player.name, name) }
-                    JoinResponse.SUCCESS
-                }
-            }
-
-        }
     }
 
     fun isMember(uuid: UUID): Boolean {

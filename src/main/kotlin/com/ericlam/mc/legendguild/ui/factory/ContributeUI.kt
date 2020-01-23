@@ -4,12 +4,12 @@ import com.ericlam.mc.kotlib.Clicker
 import com.ericlam.mc.kotlib.not
 import com.ericlam.mc.kotlib.row
 import com.ericlam.mc.legendguild.GuildManager
+import com.ericlam.mc.legendguild.Lang
 import com.ericlam.mc.legendguild.LegendGuild
 import com.ericlam.mc.legendguild.guildPlayer
 import com.ericlam.mc.legendguild.ui.UIManager
 import org.bukkit.Material
 import org.bukkit.OfflinePlayer
-import org.bukkit.entity.Player
 import org.bukkit.inventory.Inventory
 import java.util.concurrent.ConcurrentHashMap
 
@@ -43,7 +43,7 @@ object ContributeUI : UIFactory {
             }
     )
 
-    override fun getUI(bPlayer: Player): Inventory? {
+    override fun getUI(bPlayer: OfflinePlayer): Inventory? {
         return invCaches[bPlayer] ?: let {
             UIManager.p.createGUI(
                     rows = 3, title = "&c貢獻界面"
@@ -51,11 +51,11 @@ object ContributeUI : UIFactory {
                 mapOf(
                         2 row 3 to Clicker(money) { player, _ ->
                             val response = GuildManager.contributeMoney(player)
-                            player.sendMessage(LegendGuild.lang[getPath(response)])
+                            player.sendMessage(Lang[getPath(response)])
                         },
                         2 row 7 to Clicker(points) { player, _ ->
                             val response = GuildManager.contributePoints(player)
-                            player.sendMessage(LegendGuild.lang[getPath(response).not("no-money") ?: "no-points"])
+                            player.sendMessage(Lang[getPath(response).not("no-money") ?: "no-points"])
                         }
                 )
             }

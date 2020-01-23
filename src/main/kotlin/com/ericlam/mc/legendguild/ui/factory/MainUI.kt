@@ -8,7 +8,6 @@ import com.ericlam.mc.legendguild.ui.UIManager
 import com.ericlam.mc.legendguild.ui.UIManager.p
 import org.bukkit.Material
 import org.bukkit.OfflinePlayer
-import org.bukkit.entity.Player
 import org.bukkit.inventory.Inventory
 import java.util.concurrent.ConcurrentHashMap
 
@@ -73,9 +72,27 @@ object MainUI : UIFactory {
                 display = "&e查看申請者",
                 lore = listOf("點擊打開")
         )
+
+        val promote = p.itemStack(
+                material = materialHead,
+                display = "&e晉升宗門成員",
+                lore = listOf("點擊打開")
+        )
+
+        val publicStatus = p.itemStack(
+                material = Material.EMERALD_BLOCK,
+                display = "&e公會招募狀態",
+                lore = listOf("&a開放所有人申請", "點擊設置")
+        )
+
+        val privateStatus = p.itemStack(
+                material = Material.REDSTONE_BLOCK,
+                display = "&e公會招募狀態",
+                lore = listOf("&c僅限被邀請", "點擊設置")
+        )
     }
 
-    override fun getUI(bPlayer: Player): Inventory? {
+    override fun getUI(bPlayer: OfflinePlayer): Inventory? {
         return invCaches[bPlayer] ?: let {
             val player = bPlayer.guildPlayer ?: return null
 
@@ -91,31 +108,33 @@ object MainUI : UIFactory {
                         4 row 5 to Clicker(pvp),
                         4 row 6 to Clicker(leave) { player, _ ->
                             val msg = if (player.leaveGuild()) "success" else "failed"
-                            player.sendMessage(LegendGuild.lang[msg])
+                            player.sendMessage(Lang[msg])
                         },
                         4 row 7 to Clicker(salaryGet) { player, _ ->
                             val res = GuildManager.sendSalary(player)
-                            player.sendMessage(LegendGuild.lang[getSalaryResponse(res)])
+                            player.sendMessage(Lang[getSalaryResponse(res)])
                         }
                 ).apply {
                     if (player.role hasPower GuildPlayer.Role.ELDER) {
                         this += 4 row 8 to Clicker(Admin.joinerList) { p, _ ->
-                            val inv = SettingUI.getGuildGui(p, "joiner")
-                                    ?: let {
-                                        whoClicked.sendMessage(LegendGuild.lang["not-in-guild"])
-                                        return@Clicker
-                                    }
-                            UIManager.openUI(p, inv)
+                            UIManager.openUI(p, JoinerUI)
+                        }
+                        this += 4 row 9 to Clicker(Admin.promote) { p, _ ->
+                            UIManager.openUI(p, PromoteUI)
+                        }
+                        this += 5 row 1 to Clicker(Admin.publicStatus) { player, _ ->
+                            val guild = player.guild ?: let {
+                                player.sendMessage(Lang["not-in-guild"])
+                                return@Clicker
+                            }
+                            guild.public = !guild.public
+                            player.tellSuccess()
+                            clickedInventory.setItem(5 row 2, if (guild.public) Admin.publicStatus else Admin.privateStatus)
                         }
                     }
                     if (player.role hasPower GuildPlayer.Role.CO_POPE) {
-                        this += 4 row 9 to Clicker(Admin.salarySet) { p, _ ->
-                            val inv = SettingUI.getGuildGui(p, "salary")
-                                    ?: let {
-                                        whoClicked.sendMessage(LegendGuild.lang["not-in-guild"])
-                                        return@Clicker
-                                    }
-                            UIManager.openUI(p, inv)
+                        this += 5 row 2 to Clicker(Admin.salarySet) { p, _ ->
+                            UIManager.openUI(p, SalaryUI)
                         }
                     }
                 }
@@ -157,7 +176,7 @@ object MainUI : UIFactory {
                 )
         )
         val member = p.itemStack(
-                material = Material.SKULL,
+                material = materialHead,
                 display = "&e公會總人數",
                 lore = listOf("&7${guild.members.size} 人")
         )
@@ -177,15 +196,19 @@ object MainUI : UIFactory {
         val resources = p.itemStack(
                 material = Material.DIAMOND,
                 display = "&b公會資源",
-                lore = guild.resource.items.map { "${LegendGuild.lang["item-translate.${it.key}"]}: ${it.value} 個" }.toList()
+                lore = guild.resource.items.map { "${Lang.Item[it.key]}: ${it.value} 個" }.toList()
         )
-        mapOf(
+        mutableMapOf(
                 1 row 5 to describe, //info
                 2 row 2 to member, //info
                 2 row 4 to level, //info
                 2 row 6 to money, //info
                 2 row 8 to resources //info
-        ).forEach { (slot, stack) ->
+        ).apply {
+            if (player.guildPlayer?.role?.hasPower(GuildPlayer.Role.ELDER) == true) {
+                this += 5 row 1 to if (guild.public) Admin.publicStatus else Admin.privateStatus
+            }
+        }.forEach { (slot, stack) ->
             inventory.setItem(slot, stack)
         }
     }

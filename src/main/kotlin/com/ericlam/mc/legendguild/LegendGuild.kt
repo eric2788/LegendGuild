@@ -8,6 +8,8 @@ import com.ericlam.mc.legendguild.config.Items
 import com.ericlam.mc.legendguild.config.Lang
 import com.ericlam.mc.legendguild.guild.GuildController
 import com.ericlam.mc.legendguild.guild.GuildPlayerController
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import net.milkbowl.vault.economy.Economy
 import org.black_ixx.playerpoints.PlayerPoints
 import org.black_ixx.playerpoints.PlayerPointsAPI
@@ -16,6 +18,7 @@ import org.bukkit.entity.Projectile
 import org.bukkit.entity.TNTPrimed
 import org.bukkit.event.entity.EntityDamageByEntityEvent
 import org.bukkit.event.entity.EntityDamageEvent
+import org.bukkit.event.player.PlayerJoinEvent
 import java.text.MessageFormat
 
 
@@ -31,19 +34,19 @@ class LegendGuild : BukkitPlugin() {
         private lateinit var _gpcontroller: GuildPlayerController
         private lateinit var _pointsApi: PlayerPointsAPI
         val config: Config
-                get() = _config
+            get() = _config
         val lang: Lang
-                get() = _lang
+            get() = _lang
         val item: Items
-                get() = _item
+            get() = _item
         val economy: Economy
-                get() = _econmony
+            get() = _econmony
         val guildController: GuildController
-                get() = _gcontroller
+            get() = _gcontroller
         val guildPlayerController: GuildPlayerController
-                get() = _gpcontroller
+            get() = _gpcontroller
         val pointsAPI: PlayerPointsAPI
-                get() = _pointsApi
+            get() = _pointsApi
     }
 
     override fun enable() {
@@ -89,6 +92,16 @@ class LegendGuild : BukkitPlugin() {
             val guild = player.guild ?: return@listen
             it.damage -= it.damage * guild.percentage(GuildSkill.BLACK_TORTOISE)
         }
+
+        listen<PlayerJoinEvent> {
+            if (skinCache.contains(it.player.uniqueId)) return@listen
+            GlobalScope.launch {
+                val value = it.player.toSkinValue()
+                it.player.guildPlayer?.skinValue = value
+                skinCache[it.player.uniqueId] = value
+            }
+        }
     }
+
 
 }

@@ -16,6 +16,7 @@ data class GuildPlayer(
         @PrimaryKey val uuid: UUID,
         var name: String,
         val guild: String,
+        var skinValue: String,
         var contribution: Int = 0,
         var role: Role = Role.OUT_DISCIPLE,
         private var last_contribute: Long = 0,
