@@ -110,7 +110,7 @@ object GuildManager {
                     ResourceResponse.NOT_ENOUGH_MONEY
                 }
                 ResourceType.ITEM -> {
-                    val stack = player.inventory.itemInMainHand
+                    val stack = player.itemOnCursor
                     if ((stack?.type ?: Material.AIR) == Material.AIR) {
                         ResourceResponse.INVALID_ITEM
                     } else {
@@ -119,6 +119,7 @@ object GuildManager {
                         config.postResources.items[key]?.let {
                             p.contribution += it
                             g.resource.items[key] = (g.resource.items[key] ?: 0) + it
+                            player.itemOnCursor = null
                         }?.let { ResourceResponse.SUCCESS } ?: ResourceResponse.INVALID_ITEM
                     }
                 }

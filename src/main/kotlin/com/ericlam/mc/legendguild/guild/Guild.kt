@@ -15,6 +15,7 @@ data class Guild(
         private var level: Int = 0,
         private var exp: Double = 0.0,
         private val skills: MutableMap<GuildSkill, Int> = GuildSkill.values().map { it to 0 }.toMap().toMutableMap(),
+        val salaries: MutableMap<GuildPlayer.Role, Double> = LegendGuild.config.default_salaries,
         val resource: Resource
 ) : DataFile, Comparable<Guild> {
 
@@ -50,10 +51,6 @@ data class Guild(
     infix fun level(level: Int) {
         this.level += level
         this.exp = 0.0
-    }
-
-    fun save() {
-        LegendGuild.guildController.save { this }
     }
 
     fun percentage(skill: GuildSkill): Double {

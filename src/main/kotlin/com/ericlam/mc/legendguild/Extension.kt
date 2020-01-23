@@ -4,6 +4,7 @@ import com.ericlam.mc.legendguild.guild.Guild
 import com.ericlam.mc.legendguild.guild.GuildPlayer
 import org.bukkit.Bukkit
 import org.bukkit.OfflinePlayer
+import org.bukkit.command.CommandSender
 
 fun OfflinePlayer.leaveGuild(): Boolean {
     val gp = this.guildPlayer ?: return false
@@ -29,3 +30,15 @@ val OfflinePlayer.guildPlayer: GuildPlayer?
 
 val OfflinePlayer.guild: Guild?
     get() = GuildManager[this.uniqueId]
+
+fun CommandSender.tellSuccess() {
+    this.sendMessage(LegendGuild.lang["success"])
+}
+
+fun CommandSender.tellFailed() {
+    this.sendMessage(LegendGuild.lang["failed"])
+}
+
+fun Guild.findRole(role: GuildPlayer.Role): String {
+    return this.members.find { it.role == role }?.name ?: "NONE"
+}
