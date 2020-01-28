@@ -1,6 +1,10 @@
 package com.ericlam.mc.legendguild.command
 
 import com.ericlam.mc.kotlib.command.BukkitCommand
+import com.ericlam.mc.legendguild.toPlayer
+import com.ericlam.mc.legendguild.ui.UIManager
+import com.ericlam.mc.legendguild.ui.factory.LeaderUI
+import com.ericlam.mc.legendguild.ui.factory.MainUI
 
 object GuildCommand : BukkitCommand(
         name = "guild",
@@ -9,14 +13,16 @@ object GuildCommand : BukkitCommand(
                 BukkitCommand(
                         name = "open",
                         description = "開啟宗門功能介面"
-                ){ commandSender, strings ->
-                    TODO()
+                ) { commandSender, _ ->
+                    val player = commandSender.toPlayer ?: return@BukkitCommand
+                    UIManager.openUI(player, MainUI)
                 },
                 BukkitCommand(
                         name = "top",
                         description = "查看宗門排行榜"
-                ){ commandSender, strings ->
-                    TODO()
+                ) { commandSender, _ ->
+                    val player = commandSender.toPlayer ?: return@BukkitCommand
+                    UIManager.openUI(player, LeaderUI)
                 },
                 BukkitCommand(
                         name = "check",

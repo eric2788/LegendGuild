@@ -1,9 +1,11 @@
 package com.ericlam.mc.legendguild
 
-import com.ericlam.mc.legendguild.guild.Guild
+import com.ericlam.mc.legendguild.dao.Guild
+import com.ericlam.mc.legendguild.dao.GuildShopItems
 import org.bukkit.Material
 import org.bukkit.OfflinePlayer
 import org.bukkit.entity.Player
+import org.bukkit.inventory.ItemStack
 import java.util.*
 
 object GuildManager {
@@ -31,7 +33,7 @@ object GuildManager {
         get() = LegendGuild.guildController.findAll()
 
     val leaderBoard: SortedSet<Guild>
-        get() = guildMap.toSortedSet()
+        get() = guildMap.sortedDescending().toSortedSet()
 
     operator fun get(name: String): Guild? {
         return LegendGuild.guildController.findById(name)
@@ -48,6 +50,47 @@ object GuildManager {
         SUCCESS,
         SUCCESS_NEGATIVE,
         FAILED
+    }
+
+    enum class ShopResponse {
+        NOT_IN_GUILD,
+        BUY_SUCCESS,
+        INVALID_ITEM,
+        NO_PRODUCT,
+        NOT_ENOUGH_CONTRIBUTE
+    }
+
+    enum class CreateResponse {
+        NAME_EXIST,
+        IN_GUILD,
+        ILLEGAL_CHAR,
+        OVER_CHAR,
+        SUCCESS
+    }
+
+    fun createGuild(player: OfflinePlayer, name: String): CreateResponse {
+        if (player.guild != null) return CreateResponse.IN_GUILD
+        if (guildMap.any { it.name == name }) return CreateResponse.NAME_EXIST
+        if (name.length > LegendGuild.config.maxChar) return CreateResponse.OVER_CHAR
+        if (name.matches("\\p{L}*\\P{L}\\p{L}*".toRegex())) return CreateResponse.ILLEGAL_CHAR
+        LegendGuild.guildController.save { Guild(name) }
+        LegendGuild.guildShopController.save { GuildShopItems(name) }
+        return CreateResponse.SUCCESS
+    }
+
+    fun buyProduct(player: OfflinePlayer, stack: ItemStack): ShopResponse {
+        val guild = player.guild ?: return ShopResponse.NOT_IN_GUILD
+        val gPlayer = player.guildPlayer ?: return ShopResponse.NOT_IN_GUILD
+        val shopItems = LegendGuild.guildShopController.findById(guild.name)
+        val itemName = shopItems?.items?.entries?.filter { it.value == stack }?.map { it.key }?.firstOrNull()
+                ?: return ShopResponse.INVALID_ITEM
+        val price = guild.shopProduces[itemName] ?: return ShopResponse.NO_PRODUCT
+        return if (gPlayer.contribution >= price) {
+            gPlayer.contribution -= price
+            ShopResponse.BUY_SUCCESS
+        } else {
+            ShopResponse.NOT_ENOUGH_CONTRIBUTE
+        }
     }
 
     fun sendSalary(player: OfflinePlayer): SalaryResponse {

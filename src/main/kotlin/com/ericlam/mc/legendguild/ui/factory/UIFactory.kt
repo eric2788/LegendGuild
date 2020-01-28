@@ -1,6 +1,6 @@
 package com.ericlam.mc.legendguild.ui.factory
 
-import com.ericlam.mc.legendguild.guild.Guild
+import com.ericlam.mc.legendguild.dao.Guild
 import org.bukkit.OfflinePlayer
 import org.bukkit.inventory.Inventory
 

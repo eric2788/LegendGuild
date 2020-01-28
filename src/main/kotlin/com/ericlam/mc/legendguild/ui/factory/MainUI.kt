@@ -3,7 +3,7 @@ package com.ericlam.mc.legendguild.ui.factory
 import com.ericlam.mc.kotlib.Clicker
 import com.ericlam.mc.kotlib.row
 import com.ericlam.mc.legendguild.*
-import com.ericlam.mc.legendguild.guild.GuildPlayer
+import com.ericlam.mc.legendguild.dao.GuildPlayer
 import com.ericlam.mc.legendguild.ui.UIManager
 import com.ericlam.mc.legendguild.ui.UIManager.p
 import org.bukkit.Material
@@ -104,7 +104,9 @@ object MainUI : UIFactory {
                         4 row 1 to Clicker(contribute) { player, _ -> UIManager.openUI(player, ContributeUI) },
                         4 row 2 to Clicker(postResources) { player, _ -> UIManager.openUI(player, ResourcesUI) },
                         4 row 3 to Clicker(quest),
-                        4 row 4 to Clicker(shop),
+                        4 row 4 to Clicker(shop) { player, _ ->
+                            UIManager.openUI(player, ShopUI)
+                        },
                         4 row 5 to Clicker(pvp),
                         4 row 6 to Clicker(leave) { player, _ ->
                             val msg = if (player.leaveGuild()) "success" else "failed"
@@ -112,7 +114,7 @@ object MainUI : UIFactory {
                         },
                         4 row 7 to Clicker(salaryGet) { player, _ ->
                             val res = GuildManager.sendSalary(player)
-                            player.sendMessage(Lang[getSalaryResponse(res)])
+                            player.sendMessage(Lang[res.path])
                         }
                 ).apply {
                     if (player.role hasPower GuildPlayer.Role.ELDER) {
@@ -129,7 +131,7 @@ object MainUI : UIFactory {
                             }
                             guild.public = !guild.public
                             player.tellSuccess()
-                            clickedInventory.setItem(5 row 2, if (guild.public) Admin.publicStatus else Admin.privateStatus)
+                            clickedInventory?.setItem(5 row 2, if (guild.public) Admin.publicStatus else Admin.privateStatus)
                         }
                     }
                     if (player.role hasPower GuildPlayer.Role.CO_POPE) {
@@ -145,16 +147,17 @@ object MainUI : UIFactory {
         }
     }
 
-    private fun getSalaryResponse(res: GuildManager.SalaryResponse): String {
-        return when (res) {
-            GuildManager.SalaryResponse.FAILED -> "failed"
-            GuildManager.SalaryResponse.SUCCESS -> "success"
-            GuildManager.SalaryResponse.SUCCESS_NEGATIVE -> "success-negative"
-            GuildManager.SalaryResponse.NOT_IN_GUILD -> "not-in-guild"
-            GuildManager.SalaryResponse.ALREADY_GET_TODAY -> "did-today"
-            GuildManager.SalaryResponse.ROLE_NO_SALARIES -> "role-no-salary"
+    private val GuildManager.SalaryResponse.path: String
+        get() {
+            return when (this) {
+                GuildManager.SalaryResponse.FAILED -> "failed"
+                GuildManager.SalaryResponse.SUCCESS -> "success"
+                GuildManager.SalaryResponse.SUCCESS_NEGATIVE -> "success-negative"
+                GuildManager.SalaryResponse.NOT_IN_GUILD -> "not-in-guild"
+                GuildManager.SalaryResponse.ALREADY_GET_TODAY -> "did-today"
+                GuildManager.SalaryResponse.ROLE_NO_SALARIES -> "role-no-salary"
+            }
         }
-    }
 
 
     override fun updateInfo(player: OfflinePlayer, inventory: Inventory) {

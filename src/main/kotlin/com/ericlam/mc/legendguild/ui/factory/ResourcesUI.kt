@@ -5,8 +5,8 @@ import com.ericlam.mc.kotlib.row
 import com.ericlam.mc.legendguild.GuildManager
 import com.ericlam.mc.legendguild.Lang
 import com.ericlam.mc.legendguild.LegendGuild
+import com.ericlam.mc.legendguild.dao.Guild
 import com.ericlam.mc.legendguild.guild
-import com.ericlam.mc.legendguild.guild.Guild
 import com.ericlam.mc.legendguild.ui.UIManager.p
 import org.bukkit.Material
 import org.bukkit.OfflinePlayer
@@ -48,11 +48,11 @@ object ResourcesUI : UIFactory {
                 mapOf(
                         2 row 3 to Clicker(money) { player, _ ->
                             val res = GuildManager.postResource(player, GuildManager.ResourceType.MONEY)
-                            player.sendMessage(Lang[getPath(res)])
+                            player.sendMessage(Lang[res.path])
                         },
                         2 row 7 to Clicker(item) { player, _ ->
                             val res = GuildManager.postResource(player, GuildManager.ResourceType.ITEM)
-                            player.sendMessage(Lang[getPath(res)])
+                            player.sendMessage(Lang[res.path])
                         }
                 )
             }
@@ -62,14 +62,15 @@ object ResourcesUI : UIFactory {
         }
     }
 
-    private fun getPath(res: GuildManager.ResourceResponse): String {
-        return when (res) {
-            GuildManager.ResourceResponse.SUCCESS -> "success"
-            GuildManager.ResourceResponse.INVALID_ITEM -> "invalid-item"
-            GuildManager.ResourceResponse.NOT_ENOUGH_MONEY -> "no-money"
-            GuildManager.ResourceResponse.NOT_IN_GUILD -> "not-in-guild"
+    private val GuildManager.ResourceResponse.path: String
+        get() {
+            return when (this) {
+                GuildManager.ResourceResponse.SUCCESS -> "success"
+                GuildManager.ResourceResponse.INVALID_ITEM -> "invalid-item"
+                GuildManager.ResourceResponse.NOT_ENOUGH_MONEY -> "no-money"
+                GuildManager.ResourceResponse.NOT_IN_GUILD -> "not-in-guild"
+            }
         }
-    }
 
     override fun updateGInfo(guild: Guild, inventory: Inventory) {
         val info = p.itemStack(

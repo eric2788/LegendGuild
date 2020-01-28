@@ -1,9 +1,10 @@
 package com.ericlam.mc.legendguild.ui.factory
 
 import com.ericlam.mc.kotlib.Clicker
+import com.ericlam.mc.kotlib.row
 import com.ericlam.mc.legendguild.*
-import com.ericlam.mc.legendguild.guild.Guild
-import com.ericlam.mc.legendguild.guild.GuildPlayer
+import com.ericlam.mc.legendguild.dao.Guild
+import com.ericlam.mc.legendguild.dao.GuildPlayer
 import com.ericlam.mc.legendguild.ui.UIManager
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -11,7 +12,6 @@ import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.OfflinePlayer
 import org.bukkit.inventory.Inventory
-import java.text.MessageFormat
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedDeque
 
@@ -19,6 +19,7 @@ object JoinerUI : UIFactoryPaginated {
 
     override val paginatedCaches: MutableMap<Guild, MutableList<Inventory>> = ConcurrentHashMap()
 
+    override val pageCache: MutableMap<OfflinePlayer, ListIterator<Inventory>> = ConcurrentHashMap()
 
     override fun createPage(): Inventory {
         return UIManager.p.createGUI(
@@ -39,7 +40,7 @@ object JoinerUI : UIFactoryPaginated {
                                 isLeftClick -> {
                                     with(LegendGuild.guildPlayerController) {
                                         if (findById(uuid) != null) {
-                                            player.sendMessage(MessageFormat.format(Lang["joined-guild"], playerName))
+                                            player.sendMessage(Lang["joined-guild"].format(playerName))
                                             return@Clicker
                                         }
                                         val offline = Bukkit.getOfflinePlayer(uuid)
@@ -62,9 +63,29 @@ object JoinerUI : UIFactoryPaginated {
 
                             guild.wannaJoins.remove(uuid)
                             clickedInventory?.remove(stack)
-                        }
+                        },
+                        (6 row 2)..(6 row 8) to Clicker(UIFactoryPaginated.decorate)
                 )
-        ) { mapOf() }
+        ) {
+            mapOf(
+                    6 row 1 to Clicker(UIFactoryPaginated.previous) { player, _ ->
+                        val iterator = getIterator(player)
+                        if (iterator.hasPrevious()) {
+                            UIManager.openUI(player, iterator.previous())
+                        } else {
+                            player.sendMessage(Lang.Page["no-previous"])
+                        }
+                    },
+                    6 row 9 to Clicker(UIFactoryPaginated.next) { player, _ ->
+                        val iterator = getIterator(player)
+                        if (iterator.hasNext()) {
+                            UIManager.openUI(player, iterator.next())
+                        } else {
+                            player.sendMessage(Lang.Page["no-next"])
+                        }
+                    }
+            )
+        }
     }
 
     override fun addPlayer(player: OfflinePlayer) {

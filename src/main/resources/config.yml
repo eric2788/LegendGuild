@@ -3,6 +3,7 @@ maxExp: "%level * %level%"
 maxChar: 6
 skillUpdate: "%level% * 5"
 materialHead: SKULL
+leaderUpdate: 600
 
 dailyContribution:
   money:

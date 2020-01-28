@@ -1,4 +1,4 @@
-package com.ericlam.mc.legendguild.guild
+package com.ericlam.mc.legendguild.dao
 
 import com.ericlam.mc.kotlib.config.dao.Dao
 import java.util.*

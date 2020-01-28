@@ -1,4 +1,4 @@
-package com.ericlam.mc.legendguild.guild
+package com.ericlam.mc.legendguild.dao
 
 import com.ericlam.mc.kotlib.config.dao.DataFile
 import com.ericlam.mc.kotlib.config.dao.DataResource
@@ -17,8 +17,9 @@ data class Guild(
         var public: Boolean = true,
         val salaries: MutableMap<GuildPlayer.Role, Double> = LegendGuild.config.default_salaries,
         val wannaJoins: MutableList<UUID> = mutableListOf(),
+        val shopProduces: MutableMap<String, Int> = mutableMapOf(),
         val invites: MutableSet<UUID> = mutableSetOf(),
-        val resource: Resource
+        val resource: Resource = Resource()
 ) : DataFile, Comparable<Guild> {
 
     val members: List<GuildPlayer>
@@ -85,5 +86,5 @@ data class Guild(
         return this.level.compareTo(other.level)
     }
 
-    data class Resource(val items: MutableMap<String, Int>, var money: Double)
+    data class Resource(val items: MutableMap<String, Int> = mutableMapOf(), var money: Double = 0.0)
 }

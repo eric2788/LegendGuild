@@ -25,6 +25,7 @@ object UIManager {
         addUI(JoinerUI)
         addUI(PromoteUI)
         addUI(SalaryUI)
+        addUI(ShopUI)
 
         p.schedule(period = 10) {
             cachesList.forEach { factory ->

@@ -3,9 +3,9 @@ package com.ericlam.mc.legendguild.ui.factory
 import com.ericlam.mc.kotlib.Clicker
 import com.ericlam.mc.legendguild.Lang
 import com.ericlam.mc.legendguild.LegendGuild
+import com.ericlam.mc.legendguild.dao.Guild
+import com.ericlam.mc.legendguild.dao.GuildPlayer
 import com.ericlam.mc.legendguild.guild
-import com.ericlam.mc.legendguild.guild.Guild
-import com.ericlam.mc.legendguild.guild.GuildPlayer
 import com.ericlam.mc.legendguild.tellSuccess
 import com.ericlam.mc.legendguild.ui.UIManager
 import org.bukkit.ChatColor
@@ -14,7 +14,6 @@ import org.bukkit.OfflinePlayer
 import org.bukkit.entity.Player
 import org.bukkit.event.player.AsyncPlayerChatEvent
 import org.bukkit.inventory.Inventory
-import java.text.MessageFormat
 import java.util.concurrent.ConcurrentHashMap
 
 object SalaryUI : UIFactory {
@@ -26,7 +25,7 @@ object SalaryUI : UIFactory {
             salarySetter.remove(it.player)?.also { role ->
                 it.isCancelled = true
                 val salary = it.message.toDoubleOrNull() ?: let { _ ->
-                    it.player.sendMessage(MessageFormat.format(Lang["not-number"], it.message))
+                    it.player.sendMessage(Lang["not-number"].format(it.message))
                     return@also
                 }
                 val g = it.player.guild ?: let { _ ->

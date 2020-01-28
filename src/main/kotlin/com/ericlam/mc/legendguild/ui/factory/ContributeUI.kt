@@ -51,11 +51,11 @@ object ContributeUI : UIFactory {
                 mapOf(
                         2 row 3 to Clicker(money) { player, _ ->
                             val response = GuildManager.contributeMoney(player)
-                            player.sendMessage(Lang[getPath(response)])
+                            player.sendMessage(Lang[response.path])
                         },
                         2 row 7 to Clicker(points) { player, _ ->
                             val response = GuildManager.contributePoints(player)
-                            player.sendMessage(Lang[getPath(response).not("no-money") ?: "no-points"])
+                            player.sendMessage(Lang[response.path.not("no-money") ?: "no-points"])
                         }
                 )
             }
@@ -74,13 +74,15 @@ object ContributeUI : UIFactory {
         inventory.setItem(1 row 5, contribute)
     }
 
-    private fun getPath(response: GuildManager.ContributeResponse): String {
-        return when (response) {
-            GuildManager.ContributeResponse.NOT_ENOUGH_MONEY -> "no-money"
-            GuildManager.ContributeResponse.NOT_IN_GUILD -> "not-in-guild"
-            GuildManager.ContributeResponse.ALREADY_DID_TODAY -> "did-today"
-            GuildManager.ContributeResponse.SUCCESS -> "success"
+    private val GuildManager.ContributeResponse.path: String
+        get() {
+            return when (this) {
+                GuildManager.ContributeResponse.NOT_ENOUGH_MONEY -> "no-money"
+                GuildManager.ContributeResponse.NOT_IN_GUILD -> "not-in-guild"
+                GuildManager.ContributeResponse.ALREADY_DID_TODAY -> "did-today"
+                GuildManager.ContributeResponse.SUCCESS -> "success"
+            }
         }
-    }
+
 
 }

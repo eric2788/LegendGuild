@@ -6,8 +6,9 @@ import com.ericlam.mc.kotlib.kClassOf
 import com.ericlam.mc.legendguild.config.Config
 import com.ericlam.mc.legendguild.config.Items
 import com.ericlam.mc.legendguild.config.Lang
-import com.ericlam.mc.legendguild.guild.GuildController
-import com.ericlam.mc.legendguild.guild.GuildPlayerController
+import com.ericlam.mc.legendguild.dao.GuildController
+import com.ericlam.mc.legendguild.dao.GuildPlayerController
+import com.ericlam.mc.legendguild.dao.GuildShopItemController
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import net.milkbowl.vault.economy.Economy
@@ -19,7 +20,6 @@ import org.bukkit.entity.TNTPrimed
 import org.bukkit.event.entity.EntityDamageByEntityEvent
 import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.player.PlayerJoinEvent
-import java.text.MessageFormat
 
 
 class LegendGuild : BukkitPlugin() {
@@ -33,6 +33,7 @@ class LegendGuild : BukkitPlugin() {
         private lateinit var _gcontroller: GuildController
         private lateinit var _gpcontroller: GuildPlayerController
         private lateinit var _pointsApi: PlayerPointsAPI
+        private lateinit var _gsicontroller: GuildShopItemController
         val config: Config
             get() = _config
         val lang: Lang
@@ -47,6 +48,8 @@ class LegendGuild : BukkitPlugin() {
             get() = _gpcontroller
         val pointsAPI: PlayerPointsAPI
             get() = _pointsApi
+        val guildShopController: GuildShopItemController
+            get() = _gsicontroller
     }
 
     override fun enable() {
@@ -54,12 +57,14 @@ class LegendGuild : BukkitPlugin() {
                 .register(Config::class).register(Items::class).register(Lang::class)
                 .registerDao(kClassOf(), GuildPlayerController::class)
                 .registerDao(kClassOf(), GuildPlayerController::class)
+                .registerDao(kClassOf(), GuildShopItemController::class)
                 .dump()
         _config = manager.getConfig(kClassOf())
         _lang = manager.getConfig(kClassOf())
         _item = manager.getConfig(kClassOf())
         _gcontroller = manager.getDao(kClassOf())
         _gpcontroller = manager.getDao(kClassOf())
+        _gsicontroller = manager.getDao(kClassOf())
         val rsp = server.servicesManager.getRegistration(Economy::class.java)
         _econmony = rsp.provider
         _pointsApi = getPlugin(PlayerPoints::class.java).api
@@ -82,7 +87,7 @@ class LegendGuild : BukkitPlugin() {
             val critical = guild.percentage(GuildSkill.VERMILION_BIRD) * 100
             if ((0..100).random() < critical) {
                 val extra = it.damage * guild.percentage(GuildSkill.WHITE_TIGER)
-                killer.sendMessage(MessageFormat.format(lang["damage-critical"], extra))
+                killer.sendMessage(lang["damage-critical"].format(extra))
                 it.damage += extra
             }
         }

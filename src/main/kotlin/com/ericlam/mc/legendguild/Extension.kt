@@ -3,8 +3,8 @@ package com.ericlam.mc.legendguild
 import com.ericlam.mc.kotlib.bukkit.BukkitPlugin
 import com.ericlam.mc.kotlib.catch
 import com.ericlam.mc.kotlib.not
-import com.ericlam.mc.legendguild.guild.Guild
-import com.ericlam.mc.legendguild.guild.GuildPlayer
+import com.ericlam.mc.legendguild.dao.Guild
+import com.ericlam.mc.legendguild.dao.GuildPlayer
 import com.ericlam.mc.legendguild.ui.factory.PromoteUI
 import com.google.gson.Gson
 import com.mojang.authlib.GameProfile
@@ -15,11 +15,13 @@ import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.OfflinePlayer
 import org.bukkit.command.CommandSender
+import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.ItemMeta
 import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
+import java.text.MessageFormat
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
@@ -35,6 +37,7 @@ fun OfflinePlayer.leaveGuild(): Boolean {
             }.forEach {
                 Bukkit.getPlayer(it)?.sendMessage(Lang["guild-deleted"])
             }
+
             true
         } else {
             false
@@ -88,6 +91,10 @@ fun ItemMeta.toSkullMeta(skin: String): ItemMeta {
     return this
 }
 
+fun String.format(vararg o: Any): String {
+    return MessageFormat.format(this, o)
+}
+
 object Lang {
     operator fun get(path: String): String {
         return LegendGuild.lang[path]
@@ -102,6 +109,18 @@ object Lang {
     object Item {
         operator fun get(path: String): String {
             return LegendGuild.lang["item-translate.$path"]
+        }
+    }
+
+    object Page {
+        operator fun get(path: String): String {
+            return LegendGuild.lang["page.$path"]
+        }
+    }
+
+    object Shop {
+        operator fun get(path: String): String {
+            return LegendGuild.lang["shop.$path"]
         }
     }
 }
@@ -142,6 +161,12 @@ fun OfflinePlayer.join(gName: String): JoinResponse {
         }
     }
 }
+
+inline val CommandSender.toPlayer: Player?
+    get() = this as? Player ?: let {
+        this.sendMessage(Lang["not-player"])
+        null
+    }
 
 fun <E> MutableList<E>.removeLast(): Boolean {
     val index = (this.size - 1).not(-1) ?: return false
