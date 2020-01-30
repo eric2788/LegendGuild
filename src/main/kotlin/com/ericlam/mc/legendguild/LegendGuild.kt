@@ -6,6 +6,7 @@ import com.ericlam.mc.kotlib.kClassOf
 import com.ericlam.mc.legendguild.config.Config
 import com.ericlam.mc.legendguild.config.Items
 import com.ericlam.mc.legendguild.config.Lang
+import com.ericlam.mc.legendguild.config.Perms
 import com.ericlam.mc.legendguild.dao.GuildController
 import com.ericlam.mc.legendguild.dao.GuildPlayerController
 import com.ericlam.mc.legendguild.dao.GuildShopItemController
@@ -29,6 +30,7 @@ class LegendGuild : BukkitPlugin() {
         private lateinit var _config: Config
         private lateinit var _lang: Lang
         private lateinit var _item: Items
+        private lateinit var _perms: Perms
         private lateinit var _econmony: Economy
         private lateinit var _gcontroller: GuildController
         private lateinit var _gpcontroller: GuildPlayerController
@@ -40,6 +42,8 @@ class LegendGuild : BukkitPlugin() {
             get() = _lang
         val item: Items
             get() = _item
+        val perms: Perms
+            get() = _perms
         val economy: Economy
             get() = _econmony
         val guildController: GuildController
@@ -55,6 +59,7 @@ class LegendGuild : BukkitPlugin() {
     override fun enable() {
         val manager = KotLib.getConfigFactory(this)
                 .register(Config::class).register(Items::class).register(Lang::class)
+                .register(Perms::class)
                 .registerDao(kClassOf(), GuildPlayerController::class)
                 .registerDao(kClassOf(), GuildPlayerController::class)
                 .registerDao(kClassOf(), GuildShopItemController::class)
@@ -99,12 +104,15 @@ class LegendGuild : BukkitPlugin() {
         }
 
         listen<PlayerJoinEvent> {
-            if (skinCache.contains(it.player.uniqueId)) return@listen
-            GlobalScope.launch {
-                val value = it.player.toSkinValue()
-                it.player.guildPlayer?.skinValue = value
-                skinCache[it.player.uniqueId] = value
+            it.player.refreshPermissions()
+            if (!skinCache.contains(it.player.uniqueId)) {
+                GlobalScope.launch {
+                    val value = it.player.toSkinValue()
+                    it.player.guildPlayer?.skinValue = value
+                    skinCache[it.player.uniqueId] = value
+                }
             }
+            queue[it.player.uniqueId]?.forEach { msg -> it.player.sendMessage(msg) }
         }
     }
 

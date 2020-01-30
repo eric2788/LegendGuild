@@ -16,8 +16,7 @@ data class Guild(
         private val skills: MutableMap<GuildSkill, Int> = GuildSkill.values().map { it to 0 }.toMap().toMutableMap(),
         var public: Boolean = true,
         val salaries: MutableMap<GuildPlayer.Role, Double> = LegendGuild.config.default_salaries,
-        val wannaJoins: MutableList<UUID> = mutableListOf(),
-        val shopProduces: MutableMap<String, Int> = mutableMapOf(),
+        val wannaJoins: MutableSet<UUID> = mutableSetOf(),
         val invites: MutableSet<UUID> = mutableSetOf(),
         val resource: Resource = Resource()
 ) : DataFile, Comparable<Guild> {
@@ -53,6 +52,7 @@ data class Guild(
 
     infix fun level(level: Int) {
         this.level += level
+        if (this.level < 0) this.level = 0
         this.exp = 0.0
     }
 

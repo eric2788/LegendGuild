@@ -35,6 +35,8 @@ object PromoteUI : UIFactoryPaginated {
                                 return@also
                             }
                     gplayer.role = newRole
+                    gplayer.player.player?.refreshPermissions()
+                    gplayer.player.player?.closeInventory()
                     it.player.tellSuccess()
                 }
             }

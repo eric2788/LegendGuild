@@ -5,10 +5,15 @@ import com.ericlam.mc.kotlib.catch
 import com.ericlam.mc.kotlib.not
 import com.ericlam.mc.legendguild.dao.Guild
 import com.ericlam.mc.legendguild.dao.GuildPlayer
+import com.ericlam.mc.legendguild.dao.GuildShopItems
+import com.ericlam.mc.legendguild.ui.UIManager
+import com.ericlam.mc.legendguild.ui.factory.JoinerUI
 import com.ericlam.mc.legendguild.ui.factory.PromoteUI
+import com.ericlam.mc.legendguild.ui.factory.ShopUI
 import com.google.gson.Gson
 import com.mojang.authlib.GameProfile
 import com.mojang.authlib.properties.Property
+import de.tr7zw.changeme.nbtapi.NBTItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.bukkit.Bukkit
@@ -18,6 +23,7 @@ import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.ItemMeta
+import org.bukkit.permissions.PermissionAttachment
 import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
@@ -35,15 +41,36 @@ fun OfflinePlayer.leaveGuild(): Boolean {
             LegendGuild.guildPlayerController.deleteSome {
                 guild == name
             }.forEach {
-                Bukkit.getPlayer(it)?.sendMessage(Lang["guild-deleted"])
+                Bukkit.getOfflinePlayer(it)?.notify(Lang["guild-deleted"])
             }
-
             true
         } else {
             false
         }
     }
 }
+
+fun String.toPlayer(): OfflinePlayer? {
+    return Bukkit.getPlayerUniqueId(this)?.let { Bukkit.getOfflinePlayer(it) }
+}
+
+fun Player.refreshPermissions() {
+    this.removeAttachment(PermissionAttachment(BukkitPlugin.plugin, player))
+    this.guildPlayer?.role?.permissions?.forEach {
+        this.addAttachment(BukkitPlugin.plugin, it, true)
+    }
+}
+
+val GuildPlayer.Role.permissions: List<String>
+    get() {
+        return LegendGuild.perms.permissions.entries.flatMap {
+            if (this hasPower it.key) {
+                it.value
+            } else {
+                emptyList()
+            }
+        }
+    }
 
 val OfflinePlayer.guildPlayer: GuildPlayer?
     get() = LegendGuild.guildPlayerController.findById(this.uniqueId)
@@ -125,6 +152,47 @@ object Lang {
     }
 }
 
+val GuildManager.CreateResponse.path: String
+    get() {
+        return when (this) {
+            GuildManager.CreateResponse.NAME_EXIST -> "name-exist"
+            GuildManager.CreateResponse.IN_GUILD -> "in-guild"
+            GuildManager.CreateResponse.ILLEGAL_CHAR -> "illegal-char"
+            GuildManager.CreateResponse.OVER_CHAR -> "over-char"
+            GuildManager.CreateResponse.SUCCESS -> "success"
+        }
+    }
+
+fun Player.addItem(stack: ItemStack, price: Int) {
+    val guild = this.guild ?: let {
+        this.sendMessage(Lang["not-in-guild"])
+        return
+    }
+    guildPlayer?.role?.not(GuildPlayer.Role.ELDER) ?: let {
+        this.sendMessage(Lang["no-perm"])
+        return
+    }
+    val inventories = ShopUI.paginatedCaches.keys.find { it == guild }?.let { ShopUI.paginatedCaches[it] } ?: return
+    var inv = inventories.lastOrNull() ?: return
+    while (inv.firstEmpty() == -1) {
+        inv = JoinerUI.createPage()
+        inventories.add(inv)
+    }
+    val item = UIManager.p.itemStack(stack.type, display = stack.itemMeta?.displayName ?: stack.type.toString(),
+            lore = (stack.itemMeta?.lore ?: emptyList()) + listOf(
+                    "&7==========================",
+                    "&e擁有人: &f$displayName",
+                    "&e價格: &f$price 貢獻值"
+            ))
+    val id = UUID.randomUUID()
+    LegendGuild.guildShopController.update(guild.name) {
+        items[id] = GuildShopItems.ShopItem(price, stack, uniqueId)
+    }
+    val nbtItem = NBTItem(item)
+    nbtItem.setString("guild.shop", id.toString())
+    inv.addItem(nbtItem.item)
+}
+
 val OfflinePlayer.skullItem: ItemStack
     get() {
         return skullMap[uniqueId] ?: let {
@@ -145,6 +213,17 @@ suspend fun OfflinePlayer.toSkinValue(): String {
     return withContext(Dispatchers.Default) { httpGet("https://sessionserver.mojang.com/session/minecraft/profile/${uniqueId.toString().replace("-", "")}") }
 }
 
+fun OfflinePlayer.notify(msg: String) {
+    if (this.isOnline) {
+        this.player.sendMessage(msg)
+    } else {
+        val list = queue[this.uniqueId] ?: mutableSetOf<String>().also { queue[this.uniqueId] = it }
+        list.add(msg)
+    }
+}
+
+val queue: MutableMap<UUID, MutableSet<String>> = ConcurrentHashMap()
+
 fun OfflinePlayer.join(gName: String): JoinResponse {
     val targetGuild = GuildManager[gName] ?: return JoinResponse.UNKNOWN_GUILD
     if (!targetGuild.public && !targetGuild.invites.contains(this.uniqueId)) {
@@ -154,6 +233,7 @@ fun OfflinePlayer.join(gName: String): JoinResponse {
         this.guild?.name == name -> JoinResponse.ALREADY_IN_SAME_GUILD
         this.guild != null -> JoinResponse.ALREADY_IN_OTHER_GUILD
         targetGuild.memberMax <= targetGuild.members.size -> JoinResponse.FULL
+        targetGuild.wannaJoins.contains(this.uniqueId) -> JoinResponse.REQUEST_SENT
         else -> {
             targetGuild.wannaJoins.add(this.uniqueId)
             PromoteUI.addPlayer(this)
@@ -180,8 +260,23 @@ enum class JoinResponse {
     ALREADY_IN_OTHER_GUILD,
     SUCCESS,
     UNKNOWN_GUILD,
-    NOT_INVITED
+    NOT_INVITED,
+    REQUEST_SENT
 }
+
+val JoinResponse.path: String
+    get() {
+        return when (this) {
+            JoinResponse.NOT_INVITED -> "not-invited"
+            JoinResponse.UNKNOWN_GUILD -> "unknown-guild"
+            JoinResponse.FULL -> "full"
+            JoinResponse.ALREADY_IN_SAME_GUILD -> "same-guild"
+            JoinResponse.ALREADY_IN_OTHER_GUILD -> "in-guild"
+            JoinResponse.SUCCESS -> "success"
+            JoinResponse.REQUEST_SENT -> "invite-sent"
+        }
+    }
+
 
 val materialHead: Material
     get() = LegendGuild.config.materialHead

@@ -82,16 +82,4 @@ object JoinUI : UIFactoryPaginated {
             )
         }
     }
-
-    private val JoinResponse.path: String
-        get() {
-            return when (this) {
-                JoinResponse.NOT_INVITED -> "not-invited"
-                JoinResponse.UNKNOWN_GUILD -> "unknown-guild"
-                JoinResponse.FULL -> "full"
-                JoinResponse.ALREADY_IN_SAME_GUILD -> "same-guild"
-                JoinResponse.ALREADY_IN_OTHER_GUILD -> "in-guild"
-                JoinResponse.SUCCESS -> "success"
-            }
-        }
 }

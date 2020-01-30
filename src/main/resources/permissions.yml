@@ -1,0 +1,17 @@
+permissions:
+  POPE:
+    - "guild.destroy"
+    - "guild.war.start"
+    - "guild.quest.remove"
+  CO_POPE:
+    - "guild.salary.set"
+    - "guild.kick"
+  ELDER:
+    - "guild.pass"
+  CO_ELDER:
+    - "guild.invite"
+  DISCIPLE: []
+  OUT_DISCIPLE:
+    - "guild.war.info"
+    - "guild.quest.create"
+    - "guild.salary.get"

@@ -8,7 +8,7 @@ enum class GuildSkill(val ch: String) {
 
     companion object Factory{
         fun fromName(ch: String): GuildSkill?{
-            return values().find { it.ch == ch }
+            return values().find { it.ch == ch || it.name == ch }
         }
     }
 }

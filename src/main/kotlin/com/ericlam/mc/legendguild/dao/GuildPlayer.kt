@@ -34,7 +34,7 @@ data class GuildPlayer(
 
         companion object Factory {
             fun fromName(name: String): Role? {
-                return values().find { it.ch == name }
+                return values().find { it.ch == name || it.name == name }
             }
         }
 

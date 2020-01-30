@@ -49,7 +49,10 @@ object JoinerUI : UIFactoryPaginated {
                                             save { GuildPlayer(uuid, offline.name, guild.name, skin) }
                                         }.invokeOnCompletion {
                                             it?.printStackTrace().also { player.tellFailed() }
-                                                    ?: player.tellSuccess().also { PromoteUI.addPlayer(player) }
+                                                    ?: player.tellSuccess().also {
+                                                        PromoteUI.addPlayer(offline)
+                                                        offline.player?.refreshPermissions()
+                                                    }
                                         }
                                     }
                                 }

@@ -2,6 +2,7 @@ package com.ericlam.mc.legendguild
 
 import com.ericlam.mc.legendguild.dao.Guild
 import com.ericlam.mc.legendguild.dao.GuildShopItems
+import de.tr7zw.changeme.nbtapi.NBTItem
 import org.bukkit.Material
 import org.bukkit.OfflinePlayer
 import org.bukkit.entity.Player
@@ -57,7 +58,8 @@ object GuildManager {
         BUY_SUCCESS,
         INVALID_ITEM,
         NO_PRODUCT,
-        NOT_ENOUGH_CONTRIBUTE
+        NOT_ENOUGH_CONTRIBUTE,
+        INVENTORY_FULL
     }
 
     enum class CreateResponse {
@@ -78,18 +80,31 @@ object GuildManager {
         return CreateResponse.SUCCESS
     }
 
-    fun buyProduct(player: OfflinePlayer, stack: ItemStack): ShopResponse {
-        val guild = player.guild ?: return ShopResponse.NOT_IN_GUILD
-        val gPlayer = player.guildPlayer ?: return ShopResponse.NOT_IN_GUILD
+    fun buyProduct(player: Player, stack: ItemStack): Pair<ShopResponse, GuildShopItems.ShopItem?> {
+        val guild = player.guild ?: return ShopResponse.NOT_IN_GUILD to null
+        val gPlayer = player.guildPlayer ?: return ShopResponse.NOT_IN_GUILD to null
         val shopItems = LegendGuild.guildShopController.findById(guild.name)
-        val itemName = shopItems?.items?.entries?.filter { it.value == stack }?.map { it.key }?.firstOrNull()
-                ?: return ShopResponse.INVALID_ITEM
-        val price = guild.shopProduces[itemName] ?: return ShopResponse.NO_PRODUCT
+        val nbtItem = NBTItem(stack)
+        val id = nbtItem.getString("guild.shop")?.let {
+            try {
+                UUID.fromString(it)
+            } catch (e: IllegalArgumentException) {
+                null
+            }
+        } ?: return ShopResponse.INVALID_ITEM to null
+
+        val shopItem = shopItems?.items?.filterKeys { it == id }?.map { it.value }?.singleOrNull()
+                ?: return ShopResponse.NO_PRODUCT to null
+        val price = shopItem.price
         return if (gPlayer.contribution >= price) {
-            gPlayer.contribution -= price
-            ShopResponse.BUY_SUCCESS
+            if (player.inventory.addItem(shopItem.item).isEmpty()) {
+                gPlayer.contribution -= price
+                shopItems.items.remove(id)
+                ShopResponse.BUY_SUCCESS
+            }
+            ShopResponse.INVENTORY_FULL to shopItem
         } else {
-            ShopResponse.NOT_ENOUGH_CONTRIBUTE
+            ShopResponse.NOT_ENOUGH_CONTRIBUTE to shopItem
         }
     }
 
