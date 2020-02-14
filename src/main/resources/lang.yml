@@ -42,5 +42,10 @@ shop:
   inv-full: "your inventory is full!!"
   someone-bought: "someone has bought your product"
   product-removed: "you have one product got removed by admin"
+quest-result:
+  success: "quest success and reward claimed!"
+  failed: "condition not reached"
+  no-quest: "you have no quest in current"
+  deadlined: "your quest has deadlined"
 item-translate:
   pistil: "天地之蕊"

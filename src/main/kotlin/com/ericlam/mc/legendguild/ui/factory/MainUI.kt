@@ -103,7 +103,9 @@ object MainUI : UIFactory {
                 mutableMapOf(
                         4 row 1 to Clicker(contribute) { player, _ -> UIManager.openUI(player, ContributeUI) },
                         4 row 2 to Clicker(postResources) { player, _ -> UIManager.openUI(player, ResourcesUI) },
-                        4 row 3 to Clicker(quest),
+                        4 row 3 to Clicker(quest) { player, _ ->
+                            UIManager.openUI(player, QuestUI)
+                        },
                         4 row 4 to Clicker(shop) { player, _ ->
                             UIManager.openUI(player, ShopUI)
                         },

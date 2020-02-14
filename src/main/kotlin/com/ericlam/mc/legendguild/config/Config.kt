@@ -3,6 +3,7 @@ package com.ericlam.mc.legendguild.config
 import com.ericlam.mc.kotlib.config.Resource
 import com.ericlam.mc.kotlib.config.dto.ConfigFile
 import com.ericlam.mc.legendguild.dao.GuildPlayer
+import com.ericlam.mc.legendguild.dao.QuestType
 import org.bukkit.Material
 
 @Resource(locate = "config.yml")
@@ -16,7 +17,8 @@ data class Config(
         val salaries: MutableMap<GuildPlayer.Role, Double>,
         val default_salaries: MutableMap<GuildPlayer.Role, Double>,
         val materialHead: Material,
-        val leaderUpdate: Long
+        val leaderUpdate: Long,
+        val questItems: Map<QuestType, Material>
 ) : ConfigFile(){
 
     data class PostResources(

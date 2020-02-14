@@ -21,6 +21,12 @@ postResources:
   items:
     pistil: 500
 
+questItems:
+  EASY: IRON_INGOT
+  NORMAL: GOLD_INGOT
+  HARD: DIAMOND
+  NIGHTMARE: EMERALD
+
 
 salaries:
   CO_POPE: 5000

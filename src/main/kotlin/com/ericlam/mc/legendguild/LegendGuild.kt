@@ -10,16 +10,16 @@ import com.ericlam.mc.legendguild.config.Perms
 import com.ericlam.mc.legendguild.dao.GuildController
 import com.ericlam.mc.legendguild.dao.GuildPlayerController
 import com.ericlam.mc.legendguild.dao.GuildShopItemController
+import com.ericlam.mc.legendguild.dao.QuestPlayerController
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import net.milkbowl.vault.economy.Economy
 import org.black_ixx.playerpoints.PlayerPoints
 import org.black_ixx.playerpoints.PlayerPointsAPI
 import org.bukkit.entity.Player
-import org.bukkit.entity.Projectile
-import org.bukkit.entity.TNTPrimed
 import org.bukkit.event.entity.EntityDamageByEntityEvent
 import org.bukkit.event.entity.EntityDamageEvent
+import org.bukkit.event.entity.EntityDeathEvent
 import org.bukkit.event.player.PlayerJoinEvent
 
 
@@ -36,6 +36,7 @@ class LegendGuild : BukkitPlugin() {
         private lateinit var _gpcontroller: GuildPlayerController
         private lateinit var _pointsApi: PlayerPointsAPI
         private lateinit var _gsicontroller: GuildShopItemController
+        private lateinit var _qpcontroller: QuestPlayerController
         val config: Config
             get() = _config
         val lang: Lang
@@ -54,6 +55,8 @@ class LegendGuild : BukkitPlugin() {
             get() = _pointsApi
         val guildShopController: GuildShopItemController
             get() = _gsicontroller
+        val questPlayerController: QuestPlayerController
+            get() = _qpcontroller
     }
 
     override fun enable() {
@@ -63,6 +66,7 @@ class LegendGuild : BukkitPlugin() {
                 .registerDao(kClassOf(), GuildPlayerController::class)
                 .registerDao(kClassOf(), GuildPlayerController::class)
                 .registerDao(kClassOf(), GuildShopItemController::class)
+                .registerDao(kClassOf(), QuestPlayerController::class)
                 .dump()
         _config = manager.getConfig(kClassOf())
         _lang = manager.getConfig(kClassOf())
@@ -70,6 +74,7 @@ class LegendGuild : BukkitPlugin() {
         _gcontroller = manager.getDao(kClassOf())
         _gpcontroller = manager.getDao(kClassOf())
         _gsicontroller = manager.getDao(kClassOf())
+        _qpcontroller = manager.getDao(kClassOf())
         val rsp = server.servicesManager.getRegistration(Economy::class.java)
         _econmony = rsp.provider
         _pointsApi = getPlugin(PlayerPoints::class.java).api
@@ -80,12 +85,7 @@ class LegendGuild : BukkitPlugin() {
 
     private fun registerListeners() {
         listen<EntityDamageByEntityEvent> {
-            val killer = when (it.entity) {
-                is Player -> it.entity as Player
-                is Projectile -> (it.entity as Projectile).shooter as? Player ?: return@listen
-                is TNTPrimed -> (it.entity as TNTPrimed).source as? Player ?: return@listen
-                else -> return@listen
-            }
+            val killer = it.entity.playerKiller ?: return@listen
             val guild = killer.guild ?: return@listen
             val damagePlus = guild.percentage(GuildSkill.AZURE_DRAGON)
             it.damage += it.damage * damagePlus
@@ -113,6 +113,15 @@ class LegendGuild : BukkitPlugin() {
                 }
             }
             queue[it.player.uniqueId]?.forEach { msg -> it.player.sendMessage(msg) }
+        }
+
+        listen<EntityDeathEvent> {
+            val victim = it.entity
+            val killer = (it.entity.lastDamageCause as? EntityDamageByEntityEvent)?.damager?.playerKiller
+                    ?: return@listen
+            questPlayerController.update(killer.uniqueId) {
+                item?.killed?.add(victim)
+            }
         }
     }
 

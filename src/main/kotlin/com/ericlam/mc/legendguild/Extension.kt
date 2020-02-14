@@ -6,6 +6,7 @@ import com.ericlam.mc.kotlib.not
 import com.ericlam.mc.legendguild.dao.Guild
 import com.ericlam.mc.legendguild.dao.GuildPlayer
 import com.ericlam.mc.legendguild.dao.GuildShopItems
+import com.ericlam.mc.legendguild.dao.QuestPlayer
 import com.ericlam.mc.legendguild.ui.UIManager
 import com.ericlam.mc.legendguild.ui.factory.JoinerUI
 import com.ericlam.mc.legendguild.ui.factory.PromoteUI
@@ -20,7 +21,10 @@ import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.OfflinePlayer
 import org.bukkit.command.CommandSender
+import org.bukkit.entity.Entity
 import org.bukkit.entity.Player
+import org.bukkit.entity.Projectile
+import org.bukkit.entity.TNTPrimed
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.ItemMeta
 import org.bukkit.permissions.PermissionAttachment
@@ -37,18 +41,16 @@ fun OfflinePlayer.leaveGuild(): Boolean {
         LegendGuild.guildPlayerController.delete(this.uniqueId)
         true
     } else {
+        val list = LegendGuild.guildPlayerController.find { guild == name }.mapNotNull { Bukkit.getOfflinePlayer(it.uuid) }
         return if (LegendGuild.guildController.delete(gp.guild)) {
-            LegendGuild.guildPlayerController.deleteSome {
-                guild == name
-            }.forEach {
-                Bukkit.getOfflinePlayer(it)?.notify(Lang["guild-deleted"])
-            }
+            list.forEach { it.notify(Lang["guild-deleted"]) }
             true
         } else {
             false
         }
     }
 }
+
 
 fun String.toPlayer(): OfflinePlayer? {
     return Bukkit.getPlayerUniqueId(this)?.let { Bukkit.getOfflinePlayer(it) }
@@ -60,6 +62,16 @@ fun Player.refreshPermissions() {
         this.addAttachment(BukkitPlugin.plugin, it, true)
     }
 }
+
+val Entity.playerKiller: Player?
+    get() {
+        return when (this) {
+            is Player -> this
+            is Projectile -> this.shooter as? Player
+            is TNTPrimed -> this.source as? Player
+            else -> return null
+        }
+    }
 
 val GuildPlayer.Role.permissions: List<String>
     get() {
@@ -122,6 +134,15 @@ fun String.format(vararg o: Any): String {
     return MessageFormat.format(this, o)
 }
 
+val QuestPlayer.QuestResult.path: String
+    get() {
+        return when (this) {
+            QuestPlayer.QuestResult.SUCCESS_AND_REWARDED -> "quest-result.success"
+            QuestPlayer.QuestResult.DEADLINED -> "quest-result.deadlined"
+            QuestPlayer.QuestResult.NOT_STARTED_ANY -> "quest-result.no-quest"
+            QuestPlayer.QuestResult.FAILED -> "quest-result.failed"
+        }
+    }
 object Lang {
     operator fun get(path: String): String {
         return LegendGuild.lang[path]

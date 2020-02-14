@@ -2,6 +2,7 @@ package com.ericlam.mc.legendguild.dao
 
 import com.ericlam.mc.kotlib.config.dao.DataFile
 import com.ericlam.mc.kotlib.config.dao.DataResource
+import com.ericlam.mc.kotlib.config.dao.ForeignKey
 import com.ericlam.mc.kotlib.config.dao.PrimaryKey
 import com.ericlam.mc.legendguild.LegendGuild
 import org.bukkit.Bukkit
@@ -15,7 +16,7 @@ import java.util.*
 data class GuildPlayer(
         @PrimaryKey val uuid: UUID,
         var name: String,
-        val guild: String,
+        @ForeignKey(Guild::class) val guild: String,
         var skinValue: String,
         var contribution: Int = 0,
         var role: Role = Role.OUT_DISCIPLE,
