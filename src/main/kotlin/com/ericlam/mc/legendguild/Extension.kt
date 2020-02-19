@@ -43,7 +43,10 @@ fun OfflinePlayer.leaveGuild(): Boolean {
     } else {
         val list = LegendGuild.guildPlayerController.find { guild == name }.mapNotNull { Bukkit.getOfflinePlayer(it.uuid) }
         return if (LegendGuild.guildController.delete(gp.guild)) {
-            list.forEach { it.notify(Lang["guild-deleted"]) }
+            list.forEach {
+                UIManager.clearCache(it)
+                it.notify(Lang["guild-deleted"])
+            }
             true
         } else {
             false

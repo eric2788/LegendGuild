@@ -37,6 +37,7 @@ object PromoteUI : UIFactoryPaginated {
                     gplayer.role = newRole
                     gplayer.player.player?.refreshPermissions()
                     gplayer.player.player?.closeInventory()
+                    UIManager.clearCache(gplayer.player)
                     it.player.tellSuccess()
                 }
             }

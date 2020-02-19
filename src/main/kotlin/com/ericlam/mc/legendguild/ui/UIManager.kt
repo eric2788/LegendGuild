@@ -3,6 +3,7 @@ package com.ericlam.mc.legendguild.ui
 import com.ericlam.mc.kotlib.bukkit.BukkitPlugin
 import com.ericlam.mc.legendguild.Lang
 import com.ericlam.mc.legendguild.ui.factory.*
+import org.bukkit.OfflinePlayer
 import org.bukkit.entity.Player
 import org.bukkit.inventory.Inventory
 
@@ -36,6 +37,10 @@ object UIManager {
                 }
             }
         }
+    }
+
+    fun clearCache(p: OfflinePlayer) {
+        cachesList.filter { ui -> ui.invCaches.containsKey(p) }.forEach { ui -> ui.invCaches.remove(p) }
     }
 
     fun openUI(p: Player, inv: UIFactory) {
