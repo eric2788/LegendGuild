@@ -174,6 +174,12 @@ object Lang {
             return LegendGuild.lang["shop.$path"]
         }
     }
+
+    object Request {
+        operator fun get(path: String): String {
+            return LegendGuild.lang["request.$path"]
+        }
+    }
 }
 
 val GuildManager.CreateResponse.path: String
@@ -229,7 +235,9 @@ val OfflinePlayer.skullItem: ItemStack
                     )
             )
             item.itemMeta = item.itemMeta.toSkullMeta(skinCache[uniqueId] ?: steveSkin)
-            item
+            val nbtItem = NBTItem(item)
+            nbtItem.setString("guild.head.owner", uniqueId.toString())
+            nbtItem.item
         }
     }
 

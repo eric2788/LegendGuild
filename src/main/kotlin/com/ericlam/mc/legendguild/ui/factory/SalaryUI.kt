@@ -55,7 +55,7 @@ object SalaryUI : UIFactory {
                     val item = UIManager.p.itemStack(Material.EMERALD_BLOCK,
                             display = ChatColor.YELLOW.toString() + it.first.ch,
                             lore = listOf(
-                                    "&b目前薪資: $guild.sa",
+                                    "&b目前薪資: ${guild.salaries}",
                                     "&c點我以設定薪資"
                             ))
                     it.second to Clicker(item) { player, _ ->

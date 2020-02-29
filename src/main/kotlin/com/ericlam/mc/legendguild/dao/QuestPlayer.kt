@@ -15,7 +15,9 @@ import java.util.*
 data class QuestPlayer(
         @PrimaryKey
         @ForeignKey(GuildPlayer::class) val user: UUID,
-        var item: QuestItem? = null
+        var item: QuestItem? = null,
+        var request: RequestItem? = null,
+        var job: RequestItem? = null
 ) : DataFile {
 
     enum class QuestResult {
@@ -24,6 +26,11 @@ data class QuestPlayer(
         FAILED,
         SUCCESS_AND_REWARDED
     }
+
+    data class RequestItem(
+            val goal: List<String>,
+            val owner: UUID
+    )
 
     data class QuestItem(
             val questType: QuestType,

@@ -47,5 +47,11 @@ quest-result:
   failed: "condition not reached"
   no-quest: "you have no quest in current"
   deadlined: "your quest has deadlined"
+request:
+  got-job: "you got the job"
+  accepted: "{0} accepted your job"
+  request-finish: "{0} has request you to tick finish the job"
+  job-not-found: "job not found"
+  request-not-found: "you don't have a request"
 item-translate:
   pistil: "天地之蕊"

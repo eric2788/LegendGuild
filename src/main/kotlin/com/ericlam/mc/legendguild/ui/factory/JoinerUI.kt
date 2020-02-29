@@ -6,12 +6,14 @@ import com.ericlam.mc.legendguild.*
 import com.ericlam.mc.legendguild.dao.Guild
 import com.ericlam.mc.legendguild.dao.GuildPlayer
 import com.ericlam.mc.legendguild.ui.UIManager
+import de.tr7zw.changeme.nbtapi.NBTItem
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.OfflinePlayer
 import org.bukkit.inventory.Inventory
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedDeque
 
@@ -30,11 +32,13 @@ object JoinerUI : UIFactoryPaginated {
                                 player.sendMessage(Lang["not-in-guild"])
                                 return@Clicker
                             }
-                            val playerName = stack.itemMeta?.displayName?.removePrefix("§e") ?: return@Clicker
-                            val uuid = Bukkit.getPlayerUniqueId(playerName) ?: let {
-                                player.sendMessage(Lang["player-not-found"])
-                                return@Clicker
-                            }
+                            val uuid = NBTItem(stack).getString("guild.head.owner")?.let { UUID.fromString(it) }
+                                    ?: let {
+                                        player.sendMessage(Lang["player-not-found"])
+                                        return@Clicker
+                                    }
+
+                            val playerName = Bukkit.getOfflinePlayer(uuid).name ?: "[找不到名稱]"
 
                             when {
                                 isLeftClick -> {

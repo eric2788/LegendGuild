@@ -17,7 +17,7 @@ import java.util.concurrent.ConcurrentHashMap
 object ShopUI : UIFactoryPaginated {
 
     override fun getPaginatedUI(bPlayer: OfflinePlayer): List<Inventory> {
-        throw Exception("trying to run API.jar into server")
+        return emptyList()
     }
 
     override val pageCache: MutableMap<OfflinePlayer, ListIterator<Inventory>> = ConcurrentHashMap()

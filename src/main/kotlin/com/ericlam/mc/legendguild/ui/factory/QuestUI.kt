@@ -2,6 +2,7 @@ package com.ericlam.mc.legendguild.ui.factory
 
 import com.ericlam.mc.kotlib.Clicker
 import com.ericlam.mc.legendguild.*
+import com.ericlam.mc.legendguild.dao.QuestPlayer
 import com.ericlam.mc.legendguild.dao.QuestType
 import com.ericlam.mc.legendguild.ui.UIManager
 import org.bukkit.Material
@@ -39,7 +40,12 @@ object QuestUI : UIFactory {
                         7 to Clicker(tryFinish) { player, _ ->
                             val result = questPlayer.tryFinish()
                             player.sendMessage(Lang[result.path])
-                            player.closeInventory()
+                            if (result == QuestPlayer.QuestResult.SUCCESS_AND_REWARDED) {
+                                player.closeInventory()
+                                questPlayer.item = null
+                                LegendGuild.questPlayerController.save { questPlayer }
+                            }
+
                         },
                         8 to Clicker(cancel) { player, _ ->
                             val b = LegendGuild.questPlayerController.update(bPlayer.uniqueId) {
