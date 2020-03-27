@@ -18,7 +18,8 @@ data class Config(
         val default_salaries: MutableMap<GuildPlayer.Role, Double>,
         val materialHead: Material,
         val leaderUpdate: Long,
-        val questItems: Map<QuestType, Material>
+        val questItems: Map<QuestType, Material>,
+        val lossExp: String
 ) : ConfigFile(){
 
     data class PostResources(

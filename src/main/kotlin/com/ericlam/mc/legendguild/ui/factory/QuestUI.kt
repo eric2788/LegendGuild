@@ -37,7 +37,7 @@ object QuestUI : UIFactory {
             UIManager.p.createGUI(1, "目前任務資訊") {
                 mapOf(
                         0 to Clicker(quest.questType.item),
-                        7 to Clicker(tryFinish) { player, _ ->
+                        6 to Clicker(tryFinish) { player, _ ->
                             val result = questPlayer.tryFinish()
                             player.sendMessage(Lang[result.path])
                             if (result == QuestPlayer.QuestResult.SUCCESS_AND_REWARDED) {
@@ -47,13 +47,14 @@ object QuestUI : UIFactory {
                             }
 
                         },
-                        8 to Clicker(cancel) { player, _ ->
+                        7 to Clicker(cancel) { player, _ ->
                             val b = LegendGuild.questPlayerController.update(bPlayer.uniqueId) {
                                 item = null
                             } != null
                             if (b) player.tellSuccess() else player.tellFailed()
                             player.closeInventory()
-                        }
+                        },
+                        8 to MainUI.backMainButton
                 )
             }
         }

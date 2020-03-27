@@ -6,6 +6,7 @@ import com.ericlam.mc.legendguild.*
 import com.ericlam.mc.legendguild.dao.GuildPlayer
 import com.ericlam.mc.legendguild.ui.UIManager
 import com.ericlam.mc.legendguild.ui.UIManager.p
+import com.ericlam.mc.legendguild.ui.factory.request.RequestUI
 import org.bukkit.Material
 import org.bukkit.OfflinePlayer
 import org.bukkit.inventory.Inventory
@@ -15,9 +16,10 @@ object MainUI : UIFactory {
 
     override val invCaches: MutableMap<OfflinePlayer, Inventory> = ConcurrentHashMap()
 
-    val backMainButton = p.itemStack(Material.ACACIA_DOOR,
-            display = "&e返回主選單"
-    )
+    val backMainButton = Clicker(p.itemStack(Material.ACACIA_DOOR, display = "&e返回主選單")) { p, _ ->
+        p.closeInventory()
+        UIManager.openUI(p, MainUI)
+    }
 
     private val contribute = p.itemStack(
             material = Material.SUGAR,
@@ -58,6 +60,12 @@ object MainUI : UIFactory {
             material = Material.PAPER,
             display = "&e領取薪資",
             lore = listOf("點擊領取")
+    )
+
+    private val request = p.itemStack(
+            material = LegendGuild.config.materialHead,
+            display = "&a委託與接單",
+            lore = listOf("點擊打開")
     )
 
     private object Admin {
@@ -109,7 +117,6 @@ object MainUI : UIFactory {
                         4 row 4 to Clicker(shop) { player, _ ->
                             UIManager.openUI(player, ShopUI)
                         },
-                        4 row 5 to Clicker(pvp),
                         4 row 6 to Clicker(leave) { player, _ ->
                             val msg = if (player.leaveGuild()) "success" else "failed"
                             player.sendMessage(Lang[msg])
@@ -117,6 +124,9 @@ object MainUI : UIFactory {
                         4 row 7 to Clicker(salaryGet) { player, _ ->
                             val res = GuildManager.sendSalary(player)
                             player.sendMessage(Lang[res.path])
+                        },
+                        4 row 8 to Clicker(request) { p, _ ->
+                            UIManager.openUI(p, RequestUI)
                         }
                 ).apply {
                     if (player.role hasPower GuildPlayer.Role.ELDER) {
@@ -125,6 +135,9 @@ object MainUI : UIFactory {
                         }
                         this += 4 row 9 to Clicker(Admin.promote) { p, _ ->
                             UIManager.openUI(p, PromoteUI)
+                        }
+                        this += 4 row 5 to Clicker(pvp) { p, _ ->
+                            UIManager.openUI(p, PvPUI)
                         }
                         this += 5 row 1 to Clicker(Admin.publicStatus) { player, _ ->
                             val guild = player.guild ?: let {

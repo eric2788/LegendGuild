@@ -25,11 +25,13 @@ object RequestListUI : UIFactoryPaginated {
             val inventories = mutableListOf<Inventory>()
             var currentInv = createPage()
             inventories.add(currentInv)
-            val requests = LegendGuild.questPlayerController.find { guild[user] != null }.mapNotNull { p -> Bukkit.getOfflinePlayer(p.user) }
-            val queue = ConcurrentLinkedDeque<OfflinePlayer>(requests)
+            val requestItems = LegendGuild.questPlayerController.find { guild[user] != null }
+            val queue = ConcurrentLinkedDeque(requestItems)
             while (queue.isNotEmpty()) {
-                val gPlayer = queue.poll()
-                val skull = gPlayer.skullItem
+                val requestItem = queue.poll()
+                val request = requestItem?.request ?: continue
+                val skull = Bukkit.getOfflinePlayer(requestItem.user).skullItem
+                skull.lore = listOf("&e委託內容:") + request.goal + listOf("&c===========", "&b貢獻值獎勵: ${request.contribute}")
                 currentInv.addItem(skull)
                 if (currentInv.firstEmpty() == -1) {
                     currentInv = createPage()
@@ -49,6 +51,19 @@ object RequestListUI : UIFactoryPaginated {
     override val paginatedCaches: MutableMap<Guild, MutableList<Inventory>>
         get() = ConcurrentHashMap()
 
+    override fun addPlayer(player: OfflinePlayer) {
+        val request = LegendGuild.questPlayerController.findById(player.uniqueId)?.request ?: return
+        val inventories = paginatedCaches[player.guild] ?: return
+        var currentInv = inventories.last()
+        val item = player.skullItem
+        item.lore = listOf("&e委託內容:") + request.goal + listOf("&c===========", "&b貢獻值獎勵: ${request.contribute}")
+        if (currentInv.firstEmpty() == -1) {
+            currentInv = createPage()
+            inventories.add(currentInv)
+        }
+        currentInv.addItem(item)
+    }
+
     override fun createPage(): Inventory {
         return UIManager.p.createGUI(
                 rows = 6,
@@ -59,9 +74,13 @@ object RequestListUI : UIFactoryPaginated {
                                 player.sendMessage(Lang["player-not-found"])
                                 return@Clicker
                             }
-                            val requestItem = QuestPlayer.RequestItem(stack.lore?.toList() ?: emptyList(), id)
-                            val b = LegendGuild.questPlayerController.update(player.uniqueId) { job = requestItem } == null
-                            if (b) LegendGuild.questPlayerController.save { QuestPlayer(player.uniqueId, job = requestItem) }
+                            val request = LegendGuild.questPlayerController.findById(id)?.request ?: let {
+                                player.sendMessage(Lang.Request["job-not-found"])
+                                return@Clicker
+                            }
+                            val jobItem = QuestPlayer.JobItem(request, player.uniqueId)
+                            val b = LegendGuild.questPlayerController.update(player.uniqueId) { job = jobItem } == null
+                            if (b) LegendGuild.questPlayerController.save { QuestPlayer(player.uniqueId, job = jobItem) }
                             player.sendMessage(Lang.Request["got-job"])
                             Bukkit.getOfflinePlayer(id)?.notify(Lang.Request["accepted"].format(player.name))
                         }

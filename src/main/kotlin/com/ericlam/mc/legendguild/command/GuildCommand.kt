@@ -4,10 +4,7 @@ import com.ericlam.mc.kotlib.command.BukkitCommand
 import com.ericlam.mc.legendguild.*
 import com.ericlam.mc.legendguild.dao.GuildPlayer
 import com.ericlam.mc.legendguild.ui.UIManager
-import com.ericlam.mc.legendguild.ui.factory.JoinUI
-import com.ericlam.mc.legendguild.ui.factory.JoinerUI
-import com.ericlam.mc.legendguild.ui.factory.LeaderUI
-import com.ericlam.mc.legendguild.ui.factory.MainUI
+import com.ericlam.mc.legendguild.ui.factory.*
 
 object GuildCommand : BukkitCommand(
         name = "guild",
@@ -37,10 +34,27 @@ object GuildCommand : BukkitCommand(
                 },
                 BukkitCommand(
                         name = "pvp",
-                        description = "查看宗門戰爭的資訊",
-                        permission = "guild.war.info"
-                ){ commandSender, strings ->
-                    TODO()
+                        description = "宗門戰爭接受或拒絕指令",
+                        permission = "guild.war.handle",
+                        placeholders = arrayOf("declined | accepted")
+                ) { commandSender, strings ->
+                    val player = commandSender.toPlayer ?: return@BukkitCommand
+                    val guild = player.guild ?: run {
+                        player.sendMessage(Lang["not-in-guild"])
+                        return@BukkitCommand
+                    }
+                    val accept = strings[0].equals("accept", ignoreCase = true)
+                    val inv = player.guild?.let { PvPUI.invites[it] } ?: run {
+                        player.sendMessage(Lang.PvP["no-invite"])
+                        return@BukkitCommand
+                    }
+                    if (accept) {
+                        player.sendMessage(Lang.PvP["accepted"].format(inv.guild.name))
+                        PvPUI.launchWar(inv.guild, guild, inv.small)
+                    } else {
+                        player.sendMessage(Lang.PvP["declined"].format(inv.guild.name))
+                        inv.guild.members.find { p -> p.role.hasPower(GuildPlayer.Role.ELDER) }?.player?.notify(Lang.PvP["be-declined"].format(guild.name))
+                    }
                 },
                 BukkitCommand(
                         name = "create",

@@ -2,6 +2,7 @@ maxLevel: 100
 maxExp: "%level * %level%"
 maxChar: 6
 skillUpdate: "%level% * 5"
+lossExp: "%level% * 3"
 materialHead: SKULL
 leaderUpdate: 600
 

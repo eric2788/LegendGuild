@@ -60,7 +60,7 @@ object JobInfoUI : UIFactory {
         }
         val infoItem: ItemStack = UIManager.p.itemStack(Material.PAPER,
                 display = "&e委託內容",
-                lore = job.goal
+                lore = job.request.goal
         )
         inventory.setItem(1, infoItem)
     }

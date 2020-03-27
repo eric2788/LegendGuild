@@ -89,7 +89,7 @@ object PromoteUI : UIFactoryPaginated {
             val inventories = mutableListOf<Inventory>()
             var currentInv = createPage()
             inventories.add(currentInv)
-            val queue = ConcurrentLinkedDeque<GuildPlayer>(guild.members)
+            val queue = ConcurrentLinkedDeque(guild.members)
             while (queue.isNotEmpty()) {
                 val gPlayer = queue.poll()
                 val skull = gPlayer.toSkull {

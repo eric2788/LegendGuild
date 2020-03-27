@@ -53,7 +53,8 @@ object ResourcesUI : UIFactory {
                         2 row 7 to Clicker(item) { player, _ ->
                             val res = GuildManager.postResource(player, GuildManager.ResourceType.ITEM)
                             player.sendMessage(Lang[res.path])
-                        }
+                        },
+                        3 row 8 to MainUI.backMainButton
                 )
             }
         }.also {

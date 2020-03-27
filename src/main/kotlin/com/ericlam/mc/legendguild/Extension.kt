@@ -180,6 +180,12 @@ object Lang {
             return LegendGuild.lang["request.$path"]
         }
     }
+
+    object PvP {
+        operator fun get(path: String): String {
+            return LegendGuild.lang["pvp.$path"]
+        }
+    }
 }
 
 val GuildManager.CreateResponse.path: String

@@ -3,6 +3,7 @@ permissions:
     - "guild.destroy"
     - "guild.war.start"
     - "guild.quest.remove"
+    - "guild.war.handle"
   CO_POPE:
     - "guild.salary.set"
     - "guild.kick"
@@ -12,6 +13,5 @@ permissions:
     - "guild.invite"
   DISCIPLE: []
   OUT_DISCIPLE:
-    - "guild.war.info"
     - "guild.quest.create"
     - "guild.salary.get"

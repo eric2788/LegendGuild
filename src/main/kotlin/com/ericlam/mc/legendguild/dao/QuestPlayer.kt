@@ -17,7 +17,7 @@ data class QuestPlayer(
         @ForeignKey(GuildPlayer::class) val user: UUID,
         var item: QuestItem? = null,
         var request: RequestItem? = null,
-        var job: RequestItem? = null
+        var job: JobItem? = null
 ) : DataFile {
 
     enum class QuestResult {
@@ -29,6 +29,12 @@ data class QuestPlayer(
 
     data class RequestItem(
             val goal: List<String>,
+            val contribute: Int,
+            val taken: UUID?
+    )
+
+    data class JobItem(
+            val request: RequestItem,
             val owner: UUID
     )
 

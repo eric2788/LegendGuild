@@ -3,6 +3,7 @@ package com.ericlam.mc.legendguild.command
 import com.ericlam.mc.kotlib.command.BukkitCommand
 import com.ericlam.mc.legendguild.*
 import com.ericlam.mc.legendguild.ui.factory.ShopUI
+import com.ericlam.mc.legendguild.ui.factory.request.RequestListUI
 import de.tr7zw.changeme.nbtapi.NBTEntity
 
 object AdminCommand : BukkitCommand(
@@ -174,8 +175,15 @@ object AdminCommand : BukkitCommand(
                         name = "phelp",
                         description = "查看指定玩家所在的宗門委託任務區",
                         placeholders = arrayOf("player")
-                ){commandSender, strings ->
-                    TODO()
+                ) { commandSender, strings ->
+                    val player = commandSender.toPlayer ?: return@BukkitCommand
+                    val target = strings[0].toPlayer() ?: run {
+                        commandSender.sendMessage(Lang["player-not-found"])
+                        return@BukkitCommand
+                    }
+                    RequestListUI.getUI(target)?.let { player.openInventory(it) } ?: run {
+                        player.sendMessage(Lang["failed"])
+                    }
                 }
         )
 )

@@ -3,6 +3,8 @@ package com.ericlam.mc.legendguild.ui
 import com.ericlam.mc.kotlib.bukkit.BukkitPlugin
 import com.ericlam.mc.legendguild.Lang
 import com.ericlam.mc.legendguild.ui.factory.*
+import com.ericlam.mc.legendguild.ui.factory.request.JobInfoUI
+import com.ericlam.mc.legendguild.ui.factory.request.YourRequestUI
 import org.bukkit.OfflinePlayer
 import org.bukkit.entity.Player
 import org.bukkit.inventory.Inventory
@@ -27,6 +29,8 @@ object UIManager {
         addUI(PromoteUI)
         addUI(SalaryUI)
         addUI(ShopUI)
+        addUI(JobInfoUI)
+        addUI(YourRequestUI)
 
         p.schedule(period = 10) {
             cachesList.forEach { factory ->

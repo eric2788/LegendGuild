@@ -30,7 +30,7 @@ object GuildManager {
         ITEM
     }
 
-    private val guildMap: List<Guild>
+    val guildMap: List<Guild>
         get() = LegendGuild.guildController.findAll()
 
     val leaderBoard: SortedSet<Guild>
