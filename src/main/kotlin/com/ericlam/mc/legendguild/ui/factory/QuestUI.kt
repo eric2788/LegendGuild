@@ -36,7 +36,7 @@ object QuestUI : UIFactory {
         return invCaches[bPlayer] ?: let {
             UIManager.p.createGUI(1, "目前任務資訊") {
                 mapOf(
-                        0 to Clicker(quest.questType.item),
+                        0 to Clicker(quest.questType.item()),
                         6 to Clicker(tryFinish) { player, _ ->
                             val result = questPlayer.tryFinish()
                             player.sendMessage(Lang[result.path])

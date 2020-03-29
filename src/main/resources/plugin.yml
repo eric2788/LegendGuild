@@ -1,8 +1,8 @@
 name: LegendGuild
-main: com.ericlam.mc.legendguild
+main: com.ericlam.mc.legendguild.LegendGuild
 version: ${project.version}
 api-version: "1.13"
-depend: [KotLib-API, NBTAPI, PlayerPoints, Vault]
+depend: [KotLib, NBTAPI, PlayerPoints, Vault]
 commands:
   guild:
     description: legendguild main command

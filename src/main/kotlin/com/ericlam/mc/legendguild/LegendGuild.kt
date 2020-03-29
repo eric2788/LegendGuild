@@ -3,6 +3,7 @@ package com.ericlam.mc.legendguild
 import com.ericlam.mc.kotlib.KotLib
 import com.ericlam.mc.kotlib.bukkit.BukkitPlugin
 import com.ericlam.mc.kotlib.kClassOf
+import com.ericlam.mc.legendguild.command.GuildCommand
 import com.ericlam.mc.legendguild.config.Config
 import com.ericlam.mc.legendguild.config.Items
 import com.ericlam.mc.legendguild.config.Lang
@@ -63,7 +64,7 @@ class LegendGuild : BukkitPlugin() {
         val manager = KotLib.getConfigFactory(this)
                 .register(Config::class).register(Items::class).register(Lang::class)
                 .register(Perms::class)
-                .registerDao(kClassOf(), GuildPlayerController::class)
+                .registerDao(kClassOf(), GuildController::class)
                 .registerDao(kClassOf(), GuildPlayerController::class)
                 .registerDao(kClassOf(), GuildShopItemController::class)
                 .registerDao(kClassOf(), QuestPlayerController::class)
@@ -76,10 +77,11 @@ class LegendGuild : BukkitPlugin() {
         _gsicontroller = manager.getDao(kClassOf())
         _qpcontroller = manager.getDao(kClassOf())
         val rsp = server.servicesManager.getRegistration(Economy::class.java)
-        _econmony = rsp.provider
+        _econmony = rsp?.provider ?: throw IllegalStateException("找不到有效的經濟插件")
         _pointsApi = getPlugin(PlayerPoints::class.java).api
 
         registerListeners()
+        registerCmd(GuildCommand)
     }
 
 
