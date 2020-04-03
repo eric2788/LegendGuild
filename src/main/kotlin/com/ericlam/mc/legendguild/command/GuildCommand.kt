@@ -5,6 +5,8 @@ import com.ericlam.mc.legendguild.*
 import com.ericlam.mc.legendguild.dao.GuildPlayer
 import com.ericlam.mc.legendguild.ui.UIManager
 import com.ericlam.mc.legendguild.ui.factory.*
+import de.tr7zw.nbtapi.NBTItem
+import java.util.*
 
 object GuildCommand : BukkitCommand(
         name = "guild",
@@ -129,6 +131,60 @@ object GuildCommand : BukkitCommand(
                     val player = commandSender.toPlayer ?: return@BukkitCommand
                     player.sendMessage(Lang[if (player.leaveGuild()) "success" else "not-in-guild"])
                 },
+                BukkitCommand(
+                        name = "shop",
+                        description = "宗門商店指令",
+                        child = arrayOf(
+                                BukkitCommand(
+                                        name = "upload",
+                                        description = "售賣物品",
+                                        permission = "guild.shop.sell",
+                                        placeholders = arrayOf("item", "price")
+                                ) { sender, args ->
+                                    val player = sender.toPlayer ?: return@BukkitCommand
+                                    val price = args[1].toIntOrNull() ?: run {
+                                        sender.sendMessage(Lang["not-number"].format(args[1]))
+                                        return@BukkitCommand
+                                    }
+                                    val itemC = LegendGuild.item
+                                    if (itemC.items.containsKey(args[0])) {
+                                        sender.sendMessage(Lang.Shop["same-name"])
+                                        return@BukkitCommand
+                                    }
+                                    val item = player.inventory.itemInMainHand
+                                    player.addItem(item, price)
+                                    itemC.items[args[0]] = item
+                                    itemC.save()
+                                },
+                                BukkitCommand(
+                                        name = "remove",
+                                        description = "刪除物品",
+                                        permission = "guild.shop.remove",
+                                        placeholders = arrayOf("name")
+                                ) { sender, args ->
+                                    val player = sender.toPlayer ?: return@BukkitCommand
+                                    val name = args[0]
+                                    val itemC = LegendGuild.item
+                                    val item = itemC.items[name] ?: run {
+                                        sender.sendMessage(Lang.Shop["unknown-item"])
+                                        return@BukkitCommand
+                                    }
+                                    val nbtI = NBTItem(item).getString("guild.shop.seller")
+                                    val owner = nbtI?.let {
+                                        val uuid = UUID.fromString(it)
+                                        uuid == player.uniqueId
+                                    } ?: false
+                                    if (owner) {
+                                        if (player.removeItem(item)) player.tellSuccess().also {
+                                            itemC.items.remove(name)
+                                            itemC.save()
+                                        } else player.tellFailed()
+                                    } else {
+                                        player.sendMessage(Lang.Shop["not-owner"])
+                                    }
+                                }
+                        )
+                ),
                 AdminCommand
         )
 )

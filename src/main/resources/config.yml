@@ -1,9 +1,12 @@
 maxLevel: 100
-maxExp: "%level * %level%"
+maxExp: "%level% * %level%"
 maxChar: 6
 skillUpdate: "%level% * 5"
 lossExp: "%level% * 3"
-materialHead: SKULL
+materials:
+  head: SKULL
+  glassPane: STAINED_GLASS_PANE
+  leash: LEASH
 leaderUpdate: 600
 
 dailyContribution:

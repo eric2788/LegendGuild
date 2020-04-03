@@ -48,10 +48,13 @@ object UIManager {
     }
 
     fun openUI(p: Player, inv: UIFactory) {
+        BukkitPlugin.plugin.debug("open ui ${inv::class.simpleName} for ${p.name}")
         val ui = inv.getUI(p) ?: let {
+            BukkitPlugin.plugin.debug("${inv::class.simpleName} is null for ${p.name}")
             p.sendMessage(Lang["not-in-guild"])
             return
         }
+        BukkitPlugin.plugin.debug("Successfully open ${inv::class.simpleName} for ${p.name}")
         this.openUI(p, ui)
     }
 

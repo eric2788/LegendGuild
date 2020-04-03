@@ -14,7 +14,7 @@ import com.ericlam.mc.legendguild.ui.factory.ShopUI
 import com.google.gson.Gson
 import com.mojang.authlib.GameProfile
 import com.mojang.authlib.properties.Property
-import de.tr7zw.changeme.nbtapi.NBTItem
+import de.tr7zw.nbtapi.NBTItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.bukkit.Bukkit
@@ -59,10 +59,10 @@ fun String.toPlayer(): OfflinePlayer? {
     return Bukkit.getPlayerUniqueId(this)?.let { Bukkit.getOfflinePlayer(it) }
 }
 
-fun Player.refreshPermissions() {
-    this.removeAttachment(PermissionAttachment(BukkitPlugin.plugin, player))
+fun Player.refreshPermissions(attachment: PermissionAttachment) {
+    this.removeAttachment(attachment)
     this.guildPlayer?.role?.permissions?.forEach {
-        this.addAttachment(BukkitPlugin.plugin, it, true)
+        attachment.setPermission(it, true)
     }
 }
 
@@ -110,7 +110,7 @@ val skinCache: MutableMap<UUID, String> = ConcurrentHashMap()
 
 fun GuildPlayer.toSkull(lore: GuildPlayer.() -> List<String> = { listOf() }): ItemStack {
     return skullMap[this.uuid] ?: let {
-        val item = BukkitPlugin.plugin.itemStack(LegendGuild.config.materialHead,
+        val item = BukkitPlugin.plugin.itemStack(materialHead,
                 display = "§e$name",
                 lore = lore.invoke(this)
         )
@@ -146,6 +146,7 @@ val QuestPlayer.QuestResult.path: String
             QuestPlayer.QuestResult.FAILED -> "quest-result.failed"
         }
     }
+
 object Lang {
     operator fun get(path: String): String {
         return LegendGuild.lang[path]
@@ -208,8 +209,9 @@ fun Player.addItem(stack: ItemStack, price: Int) {
         this.sendMessage(Lang["no-perm"])
         return
     }
-    val inventories = ShopUI.paginatedCaches.keys.find { it == guild }?.let { ShopUI.paginatedCaches[it] } ?: return
-    var inv = inventories.lastOrNull() ?: return
+    val inventories = ShopUI.paginatedCaches.keys.find { it == guild }?.let { ShopUI.paginatedCaches[it] }
+            ?: throw IllegalStateException("cannot find ui for ${guild.name}")
+    var inv = inventories.lastOrNull() ?: throw IllegalStateException("shop ui inventory list is empty")
     while (inv.firstEmpty() == -1) {
         inv = JoinerUI.createPage()
         inventories.add(inv)
@@ -226,13 +228,31 @@ fun Player.addItem(stack: ItemStack, price: Int) {
     }
     val nbtItem = NBTItem(item)
     nbtItem.setString("guild.shop", id.toString())
+    nbtItem.setString("guild.shop.seller", this.uniqueId.toString())
     inv.addItem(nbtItem.item)
+    this.tellSuccess()
+}
+
+fun Player.removeItem(stack: ItemStack): Boolean {
+    val guild = this.guild ?: let {
+        this.sendMessage(Lang["not-in-guild"])
+        return false
+    }
+    guildPlayer?.role?.not(GuildPlayer.Role.ELDER) ?: let {
+        this.sendMessage(Lang["no-perm"])
+        return false
+    }
+    val inventories = ShopUI.paginatedCaches.keys.find { it == guild }?.let { ShopUI.paginatedCaches[it] }
+            ?: throw IllegalStateException("cannot find ui for ${guild.name}")
+    val inv = inventories.find { inv -> inv.contains(stack) } ?: return false
+    inv.remove(stack)
+    return true
 }
 
 val OfflinePlayer.skullItem: ItemStack
     get() {
         return skullMap[uniqueId] ?: let {
-            val item = BukkitPlugin.plugin.itemStack(LegendGuild.config.materialHead,
+            val item = BukkitPlugin.plugin.itemStack(LegendGuild.config.materials.head,
                     display = "§e$name",
                     lore = listOf(
                             "&eUUID: &f$uniqueId",
@@ -317,7 +337,13 @@ val JoinResponse.path: String
 
 
 val materialHead: Material
-    get() = LegendGuild.config.materialHead
+    get() = LegendGuild.config.materials.head
+
+val materialGlassPane: Material
+    get() = LegendGuild.config.materials.glassPane
+
+val materialLeash: Material
+    get() = LegendGuild.config.materials.leash
 
 fun httpGet(urlStr: String): String {
     return try {

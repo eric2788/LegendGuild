@@ -1,8 +1,10 @@
 package com.ericlam.mc.legendguild
 
+import com.ericlam.mc.kotlib.bukkit.BukkitPlugin
 import com.ericlam.mc.legendguild.dao.Guild
+import com.ericlam.mc.legendguild.dao.GuildPlayer
 import com.ericlam.mc.legendguild.dao.GuildShopItems
-import de.tr7zw.changeme.nbtapi.NBTItem
+import de.tr7zw.nbtapi.NBTItem
 import org.bukkit.Material
 import org.bukkit.OfflinePlayer
 import org.bukkit.entity.Player
@@ -41,7 +43,10 @@ object GuildManager {
     }
 
     operator fun get(uuid: UUID): Guild? {
-        return guildMap.find { it.isMember(uuid) }
+        BukkitPlugin.plugin.debug("GuildManager[uuid] findById($uuid)")
+        return LegendGuild.guildPlayerController.findById(uuid)?.guild?.let { this[it] }.also {
+            it ?: also { BukkitPlugin.plugin.debug("cannot find guild for $uuid") }
+        }
     }
 
     enum class SalaryResponse {
@@ -76,6 +81,7 @@ object GuildManager {
         if (name.length > LegendGuild.config.maxChar) return CreateResponse.OVER_CHAR
         if (name.matches("\\p{L}*\\P{L}\\p{L}*".toRegex())) return CreateResponse.ILLEGAL_CHAR
         LegendGuild.guildController.save { Guild(name) }
+        LegendGuild.guildPlayerController.save { GuildPlayer(player.uniqueId, player.name, name, role = GuildPlayer.Role.POPE) }
         LegendGuild.guildShopController.save { GuildShopItems(name) }
         return CreateResponse.SUCCESS
     }

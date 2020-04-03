@@ -4,7 +4,7 @@ import com.ericlam.mc.kotlib.command.BukkitCommand
 import com.ericlam.mc.legendguild.*
 import com.ericlam.mc.legendguild.ui.factory.ShopUI
 import com.ericlam.mc.legendguild.ui.factory.request.RequestListUI
-import de.tr7zw.changeme.nbtapi.NBTEntity
+import de.tr7zw.nbtapi.NBTEntity
 
 object AdminCommand : BukkitCommand(
         name = "admin",
@@ -160,7 +160,7 @@ object AdminCommand : BukkitCommand(
                         commandSender.sendMessage(Lang["player-not-found"])
                         return@BukkitCommand
                     }
-                    val num = strings[2].toIntOrNull() ?: run {
+                    val num = strings[1].toIntOrNull() ?: run {
                         commandSender.sendMessage(Lang["not-number"].format(strings[1]))
                         return@BukkitCommand
                     }

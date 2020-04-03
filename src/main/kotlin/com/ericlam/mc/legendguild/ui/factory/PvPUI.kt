@@ -1,12 +1,13 @@
 package com.ericlam.mc.legendguild.ui.factory
 
 import com.ericlam.mc.kotlib.Clicker
+import com.ericlam.mc.kotlib.bukkit.BukkitPlugin
 import com.ericlam.mc.kotlib.row
 import com.ericlam.mc.legendguild.*
 import com.ericlam.mc.legendguild.dao.Guild
 import com.ericlam.mc.legendguild.dao.GuildPlayer
 import com.ericlam.mc.legendguild.ui.UIManager
-import de.tr7zw.changeme.nbtapi.NBTItem
+import de.tr7zw.nbtapi.NBTItem
 import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.OfflinePlayer
@@ -36,7 +37,7 @@ object PvPUI : UIFactoryPaginated {
     val warList = LinkedList<War>()
 
     init {
-        UIManager.p.schedule(delay = 30, unit = TimeUnit.MINUTES) { updateInv() }
+        UIManager.p.schedule(period = 30, unit = TimeUnit.MINUTES) { updateInv() }
         UIManager.p.listen<PlayerDeathEvent> {
             val victim = it.entity
             val killer = (it.entity.lastDamageCause as? EntityDamageByEntityEvent)?.damager?.playerKiller
@@ -80,7 +81,7 @@ object PvPUI : UIFactoryPaginated {
     }
 
     private fun endWar(winner: Guild, loser: Guild, war: War) {
-        val exp = JavaScript.eval(LegendGuild.config.lossExp) as Double
+        val exp = JavaScript.eval(LegendGuild.config.lossExp.trim()) as Double
         winner exp +exp
         loser exp -exp
         war.bossBar.removeAll()
@@ -95,8 +96,9 @@ object PvPUI : UIFactoryPaginated {
     private fun updateInv(): List<Inventory> {
         inventories.clear()
         var inv = createPage()
+        inventories.add(inv)
         GuildManager.guildMap.forEach { g ->
-            while (inv.firstEmpty() == -1) {
+            if (inv.firstEmpty() == -1) {
                 inv = createPage()
                 inventories.add(inv)
             }
@@ -114,7 +116,9 @@ object PvPUI : UIFactoryPaginated {
     }
 
     override fun getPaginatedUI(bPlayer: OfflinePlayer): List<Inventory> {
-        return if (inventories.isEmpty()) updateInv() else inventories
+        if (inventories.isEmpty()) updateInv()
+        BukkitPlugin.plugin.debug("pvp inventory list current size: ${inventories.size}")
+        return inventories
     }
 
     override val pageCache: MutableMap<OfflinePlayer, ListIterator<Inventory>> = mutableMapOf()

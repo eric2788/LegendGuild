@@ -16,11 +16,11 @@ data class Config(
         val postResources: PostResources,
         val salaries: MutableMap<GuildPlayer.Role, Double>,
         val default_salaries: MutableMap<GuildPlayer.Role, Double>,
-        val materialHead: Material,
+        val materials: Materials,
         val leaderUpdate: Long,
         val questItems: Map<QuestType, Material>,
         val lossExp: String
-) : ConfigFile(){
+) : ConfigFile() {
 
     data class PostResources(
             val money: Double,
@@ -28,10 +28,16 @@ data class Config(
             val items: Map<String, Int>
     )
 
+    data class Materials(
+            val head: Material,
+            val glassPane: Material,
+            val leash: Material
+    )
+
     data class Contribution(
             val money: Money,
             val points: Points
-    ){
+    ) {
         data class Money(
                 val need: Double,
                 val exp: Double,

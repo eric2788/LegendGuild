@@ -1,12 +1,13 @@
 package com.ericlam.mc.legendguild.ui.factory
 
 import com.ericlam.mc.kotlib.Clicker
+import com.ericlam.mc.kotlib.bukkit.BukkitPlugin
 import com.ericlam.mc.kotlib.row
 import com.ericlam.mc.legendguild.*
 import com.ericlam.mc.legendguild.dao.Guild
 import com.ericlam.mc.legendguild.dao.GuildPlayer
 import com.ericlam.mc.legendguild.ui.UIManager
-import de.tr7zw.changeme.nbtapi.NBTItem
+import de.tr7zw.nbtapi.NBTItem
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.bukkit.Bukkit
@@ -55,7 +56,7 @@ object JoinerUI : UIFactoryPaginated {
                                             it?.printStackTrace().also { player.tellFailed() }
                                                     ?: player.tellSuccess().also {
                                                         PromoteUI.addPlayer(offline)
-                                                        offline.player?.refreshPermissions()
+                                                        offline.player?.refreshPermissions(LegendGuild.attachment(offline.player))
                                                     }
                                         }
                                     }
@@ -108,11 +109,14 @@ object JoinerUI : UIFactoryPaginated {
 
     override fun getPaginatedUI(bPlayer: OfflinePlayer): List<Inventory> {
         val guild = bPlayer.guild ?: return emptyList()
+        BukkitPlugin.plugin.debug("joiner current paginatedCaches size: ${paginatedCaches.size}")
+        BukkitPlugin.plugin.debug("joiner current paginatedCaches details: ${paginatedCaches.map { "${it.key.name} => ${it.value.flatMap { i -> i.contents.toList() }.map { s -> s.toString() }}" }}")
         return paginatedCaches[guild] ?: let {
+            BukkitPlugin.plugin.debug("initializing joiner inventory list for ${guild.name}")
             val inventories = mutableListOf<Inventory>()
             var currentInv = createPage()
             inventories.add(currentInv)
-            val queue = ConcurrentLinkedDeque<OfflinePlayer>(guild.wannaJoins.mapNotNull { Bukkit.getOfflinePlayer(it) })
+            val queue = ConcurrentLinkedDeque(guild.wannaJoins.mapNotNull { Bukkit.getOfflinePlayer(it) })
             while (queue.isNotEmpty()) {
                 val gPlayer = queue.poll()
                 val skull = gPlayer.skullItem
@@ -122,6 +126,7 @@ object JoinerUI : UIFactoryPaginated {
                     inventories.add(currentInv)
                 }
             }
+            BukkitPlugin.plugin.debug("joiner inventory list initial size: ${inventories.size}")
             inventories
         }.also {
             updatePaginatedInfo(guild, it)

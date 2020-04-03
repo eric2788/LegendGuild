@@ -36,6 +36,9 @@ setter:
   salary: "please input the salary you want to set"
   role: "please input the role name you want to set"
 shop:
+  not-owner: "that item is not owned by you "
+  unknown-item: "unknown item name"
+  same-name: "there already has this item name"
   no-product: "this product has no longer sold, please refresh the page."
   buy-success: "successfully buy the item"
   no-contribute: "not enough contribute point!"

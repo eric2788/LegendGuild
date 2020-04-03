@@ -37,7 +37,7 @@ object LeaderUI : UIFactoryPaginated {
                     "&b總共貢獻值: ${guild.members.map { it.contribution }.sum()}"
             )
             val pope = guild.members.find { it.role == GuildPlayer.Role.POPE }
-            val item = UIManager.p.itemStack(LegendGuild.config.materialHead,
+            val item = UIManager.p.itemStack(materialHead,
                     display = "&a${guild.name}",
                     lore = lore
             ).apply {

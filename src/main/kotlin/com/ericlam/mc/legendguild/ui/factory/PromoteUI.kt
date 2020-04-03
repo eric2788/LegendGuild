@@ -35,7 +35,7 @@ object PromoteUI : UIFactoryPaginated {
                                 return@also
                             }
                     gplayer.role = newRole
-                    gplayer.player.player?.refreshPermissions()
+                    gplayer.player.player?.refreshPermissions(LegendGuild.attachment(gplayer.player.player))
                     gplayer.player.player?.closeInventory()
                     UIManager.clearCache(gplayer.player)
                     it.player.tellSuccess()

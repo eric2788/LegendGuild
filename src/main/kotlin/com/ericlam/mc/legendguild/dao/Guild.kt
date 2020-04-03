@@ -29,7 +29,7 @@ data class Guild(
 
     val maxExp: Int
         get() {
-            return JavaScript.eval(LegendGuild.config.maxExp.replace("%level%", level.toString())) as Int
+            return JavaScript.eval(LegendGuild.config.maxExp.trim().replace("%level%", level.toString())) as Int
         }
 
     val currentLevel: Int
@@ -58,7 +58,7 @@ data class Guild(
 
     fun percentage(skill: GuildSkill): Double {
         val level = skills[skill] ?: 0
-        return JavaScript.eval(LegendGuild.config.skillUpdate.replace("%level%", level.toString())) as Double / 100
+        return JavaScript.eval(LegendGuild.config.skillUpdate.trim().replace("%level%", level.toString())) as Double / 100
     }
 
     fun setSkillLevel(skill: GuildSkill, level: Int) {

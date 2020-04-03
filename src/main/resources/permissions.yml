@@ -9,6 +9,8 @@ permissions:
     - "guild.kick"
   ELDER:
     - "guild.pass"
+    - "guild.shop.sell"
+    - "guild.shop.remove"
   CO_ELDER:
     - "guild.invite"
   DISCIPLE: []

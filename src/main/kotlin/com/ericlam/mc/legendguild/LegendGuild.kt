@@ -22,12 +22,18 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent
 import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.entity.EntityDeathEvent
 import org.bukkit.event.player.PlayerJoinEvent
+import org.bukkit.permissions.PermissionAttachment
+import java.util.*
+import java.util.concurrent.ConcurrentHashMap
 
 
 class LegendGuild : BukkitPlugin() {
 
-
     companion object {
+        private val attachMap: MutableMap<UUID, PermissionAttachment> = ConcurrentHashMap()
+        fun attachment(player: Player): PermissionAttachment = attachMap[player.uniqueId]
+                ?: player.addAttachment(plugin).also { attachMap[player.uniqueId] = it }
+
         private lateinit var _config: Config
         private lateinit var _lang: Lang
         private lateinit var _item: Items
@@ -79,7 +85,6 @@ class LegendGuild : BukkitPlugin() {
         val rsp = server.servicesManager.getRegistration(Economy::class.java)
         _econmony = rsp?.provider ?: throw IllegalStateException("找不到有效的經濟插件")
         _pointsApi = getPlugin(PlayerPoints::class.java).api
-
         registerListeners()
         registerCmd(GuildCommand)
     }
@@ -106,7 +111,9 @@ class LegendGuild : BukkitPlugin() {
         }
 
         listen<PlayerJoinEvent> {
-            it.player.refreshPermissions()
+            val attch = attachMap[it.player.uniqueId] ?: it.player.addAttachment(this)
+            it.player.refreshPermissions(attch)
+            attachMap[it.player.uniqueId] = attch
             if (!skinCache.contains(it.player.uniqueId)) {
                 GlobalScope.launch {
                     val value = it.player.toSkinValue()

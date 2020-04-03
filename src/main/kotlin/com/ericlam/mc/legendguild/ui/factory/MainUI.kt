@@ -63,7 +63,7 @@ object MainUI : UIFactory {
     )
 
     private val request = p.itemStack(
-            material = LegendGuild.config.materialHead,
+            material = materialHead,
             display = "&a委託與接單",
             lore = listOf("點擊打開")
     )
@@ -106,7 +106,7 @@ object MainUI : UIFactory {
 
             return p.createGUI(6, "&e宗門界面",
                     fills = mapOf(
-                            (3 row 1)..(3 row 9) to Clicker(p.itemStack(Material.STAINED_GLASS_PANE))
+                            (3 row 1)..(3 row 9) to Clicker(p.itemStack(materialGlassPane))
                     )) {
                 mutableMapOf(
                         4 row 1 to Clicker(contribute) { player, _ -> UIManager.openUI(player, ContributeUI) },
@@ -117,15 +117,15 @@ object MainUI : UIFactory {
                         4 row 4 to Clicker(shop) { player, _ ->
                             UIManager.openUI(player, ShopUI)
                         },
-                        4 row 6 to Clicker(leave) { player, _ ->
+                        4 row 5 to Clicker(leave) { player, _ ->
                             val msg = if (player.leaveGuild()) "success" else "failed"
                             player.sendMessage(Lang[msg])
                         },
-                        4 row 7 to Clicker(salaryGet) { player, _ ->
+                        4 row 6 to Clicker(salaryGet) { player, _ ->
                             val res = GuildManager.sendSalary(player)
                             player.sendMessage(Lang[res.path])
                         },
-                        4 row 8 to Clicker(request) { p, _ ->
+                        4 row 7 to Clicker(request) { p, _ ->
                             UIManager.openUI(p, RequestUI)
                         }
                 ).apply {
@@ -136,10 +136,10 @@ object MainUI : UIFactory {
                         this += 4 row 9 to Clicker(Admin.promote) { p, _ ->
                             UIManager.openUI(p, PromoteUI)
                         }
-                        this += 4 row 5 to Clicker(pvp) { p, _ ->
+                        this += 5 row 1 to Clicker(pvp) { p, _ ->
                             UIManager.openUI(p, PvPUI)
                         }
-                        this += 5 row 1 to Clicker(Admin.publicStatus) { player, _ ->
+                        this += 5 row 2 to Clicker(Admin.publicStatus) { player, _ ->
                             val guild = player.guild ?: let {
                                 player.sendMessage(Lang["not-in-guild"])
                                 return@Clicker
@@ -179,7 +179,7 @@ object MainUI : UIFactory {
         val guild = player.guild ?: return
         val guildPlayer = player.guildPlayer ?: return
         val describe = p.itemStack(
-                material = Material.LEASH,
+                material = materialLeash,
                 display = "&e公會名稱:&c ${guild.name}",
                 lore = listOf(
                         "&a你的身份: ${guildPlayer.role.ch}, 貢獻值: ${guildPlayer.contribution}",

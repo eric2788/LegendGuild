@@ -62,7 +62,7 @@ object YourRequestUI : UIFactory {
                 lore = item.goal
         )
 
-        val owner = UIManager.p.itemStack(LegendGuild.config.materialHead, display = "接手者: ${item.taken ?: "沒有人"}")
+        val owner = UIManager.p.itemStack(materialHead, display = "接手者: ${item.taken ?: "沒有人"}")
         inventory.setItem(0, info)
         inventory.setItem(7, owner)
     }

@@ -7,7 +7,7 @@ import com.ericlam.mc.legendguild.dao.Guild
 import com.ericlam.mc.legendguild.dao.QuestPlayer
 import com.ericlam.mc.legendguild.ui.UIManager
 import com.ericlam.mc.legendguild.ui.factory.UIFactoryPaginated
-import de.tr7zw.changeme.nbtapi.NBTItem
+import de.tr7zw.nbtapi.NBTItem
 import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.OfflinePlayer

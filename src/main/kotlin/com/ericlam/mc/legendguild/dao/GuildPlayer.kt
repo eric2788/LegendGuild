@@ -5,6 +5,7 @@ import com.ericlam.mc.kotlib.config.dao.DataResource
 import com.ericlam.mc.kotlib.config.dao.ForeignKey
 import com.ericlam.mc.kotlib.config.dao.PrimaryKey
 import com.ericlam.mc.legendguild.LegendGuild
+import com.ericlam.mc.legendguild.steveSkin
 import org.bukkit.Bukkit
 import org.bukkit.OfflinePlayer
 import java.sql.Timestamp
@@ -17,7 +18,7 @@ data class GuildPlayer(
         @PrimaryKey val uuid: UUID,
         var name: String,
         @ForeignKey(Guild::class) val guild: String,
-        var skinValue: String,
+        var skinValue: String = steveSkin,
         var contribution: Int = 0,
         var role: Role = Role.OUT_DISCIPLE,
         private var last_contribute: Long = 0,

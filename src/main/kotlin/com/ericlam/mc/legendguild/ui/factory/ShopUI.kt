@@ -1,23 +1,48 @@
 package com.ericlam.mc.legendguild.ui.factory
 
 import com.ericlam.mc.kotlib.Clicker
+import com.ericlam.mc.kotlib.bukkit.BukkitPlugin
 import com.ericlam.mc.kotlib.row
 import com.ericlam.mc.legendguild.*
 import com.ericlam.mc.legendguild.dao.Guild
 import com.ericlam.mc.legendguild.ui.UIManager
-import de.tr7zw.changeme.nbtapi.NBTEntity
-import de.tr7zw.changeme.nbtapi.NBTItem
+import de.tr7zw.nbtapi.NBTEntity
+import de.tr7zw.nbtapi.NBTItem
 import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.OfflinePlayer
 import org.bukkit.inventory.Inventory
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ConcurrentLinkedDeque
 
 object ShopUI : UIFactoryPaginated {
 
     override fun getPaginatedUI(bPlayer: OfflinePlayer): List<Inventory> {
-        return emptyList()
+        val guild = bPlayer.guild ?: return emptyList()
+        val shop = LegendGuild.guildShopController.findById(guild.name) ?: return emptyList()
+        return paginatedCaches[guild] ?: let {
+            BukkitPlugin.plugin.debug("initializing shop inventory list for ${guild.name}")
+            BukkitPlugin.plugin.debug("shop current paginatedCaches details: ${paginatedCaches.map { "${it.key.name} => ${it.value.flatMap { i -> i.contents.toList() }.map { s -> s.toString() }}" }}")
+            val inventories = mutableListOf<Inventory>()
+            var currentInv = createPage()
+            inventories.add(currentInv)
+            val queue = ConcurrentLinkedDeque(shop.items.entries)
+            while (queue.isNotEmpty()) {
+                val gPlayer = queue.poll()
+                val shopItem = gPlayer.value.item
+                currentInv.addItem(shopItem)
+                if (currentInv.firstEmpty() == -1) {
+                    currentInv = createPage()
+                    inventories.add(currentInv)
+                }
+            }
+            BukkitPlugin.plugin.debug("shop inventory list initial size: ${inventories.size}")
+            inventories
+        }.also {
+            updatePaginatedInfo(guild, it)
+            paginatedCaches[guild] = it
+        }
     }
 
     override val pageCache: MutableMap<OfflinePlayer, ListIterator<Inventory>> = ConcurrentHashMap()
