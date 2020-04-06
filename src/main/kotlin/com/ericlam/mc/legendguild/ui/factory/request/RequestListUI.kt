@@ -1,6 +1,7 @@
 package com.ericlam.mc.legendguild.ui.factory.request
 
 import com.ericlam.mc.kotlib.Clicker
+import com.ericlam.mc.kotlib.bukkit.BukkitPlugin
 import com.ericlam.mc.kotlib.row
 import com.ericlam.mc.legendguild.*
 import com.ericlam.mc.legendguild.dao.Guild
@@ -30,8 +31,7 @@ object RequestListUI : UIFactoryPaginated {
             while (queue.isNotEmpty()) {
                 val requestItem = queue.poll()
                 val request = requestItem?.request ?: continue
-                val skull = Bukkit.getOfflinePlayer(requestItem.user).skullItem
-                skull.lore = listOf("&e委託內容:") + request.goal + listOf("&c===========", "&b貢獻值獎勵: ${request.contribute}")
+                val skull = Bukkit.getOfflinePlayer(requestItem.user).toSkull { listOf("&e委託內容:") + request.goal + listOf("&c===========", "&b貢獻值獎勵: ${request.contribute}") }
                 currentInv.addItem(skull)
                 if (currentInv.firstEmpty() == -1) {
                     currentInv = createPage()
@@ -54,14 +54,18 @@ object RequestListUI : UIFactoryPaginated {
     override fun addPlayer(player: OfflinePlayer) {
         val request = LegendGuild.questPlayerController.findById(player.uniqueId)?.request ?: return
         val inventories = paginatedCaches[player.guild] ?: return
+        BukkitPlugin.plugin.debug("${this::class.simpleName} adding player ${player.name}")
         var currentInv = inventories.last()
-        val item = player.skullItem
-        item.lore = listOf("&e委託內容:") + request.goal + listOf("&c===========", "&b貢獻值獎勵: ${request.contribute}")
+        val item = player.toSkull { listOf("&e委託內容:") + request.goal + listOf("&c===========", "&b貢獻值獎勵: ${request.contribute}") }
         if (currentInv.firstEmpty() == -1) {
             currentInv = createPage()
             inventories.add(currentInv)
         }
         currentInv.addItem(item)
+    }
+
+    override fun customFilter(guild: Guild, item: ItemStack): Boolean {
+        return guild.members.map { it.name }.contains(NBTItem(item).getString("guild.head.owner"))
     }
 
     override fun createPage(): Inventory {

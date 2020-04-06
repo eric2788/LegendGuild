@@ -15,11 +15,11 @@ object LeaderUI : UIFactoryPaginated {
     private val inventories: MutableList<Inventory> = LinkedList()
 
     override fun getPaginatedUI(bPlayer: OfflinePlayer): List<Inventory> {
-        return inventories
+        return if (inventories.isEmpty()) updateInv().let { inventories } else inventories
     }
 
     init {
-        UIManager.p.schedule(delay = LegendGuild.config.leaderUpdate) { updateInv() }
+        UIManager.p.schedule(period = LegendGuild.config.leaderUpdate) { updateInv() }
     }
 
     private fun updateInv() {

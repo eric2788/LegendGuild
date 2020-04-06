@@ -68,8 +68,8 @@ class LegendGuild : BukkitPlugin() {
 
     override fun enable() {
         val manager = KotLib.getConfigFactory(this)
-                .register(Config::class).register(Items::class).register(Lang::class)
-                .register(Perms::class)
+                .register(Config::class).register(Items::class)
+                .register(Lang::class).register(Perms::class)
                 .registerDao(kClassOf(), GuildController::class)
                 .registerDao(kClassOf(), GuildPlayerController::class)
                 .registerDao(kClassOf(), GuildShopItemController::class)
@@ -78,6 +78,7 @@ class LegendGuild : BukkitPlugin() {
         _config = manager.getConfig(kClassOf())
         _lang = manager.getConfig(kClassOf())
         _item = manager.getConfig(kClassOf())
+        _perms = manager.getConfig(kClassOf())
         _gcontroller = manager.getDao(kClassOf())
         _gpcontroller = manager.getDao(kClassOf())
         _gsicontroller = manager.getDao(kClassOf())
@@ -112,16 +113,18 @@ class LegendGuild : BukkitPlugin() {
 
         listen<PlayerJoinEvent> {
             val attch = attachMap[it.player.uniqueId] ?: it.player.addAttachment(this)
-            it.player.refreshPermissions(attch)
-            attachMap[it.player.uniqueId] = attch
-            if (!skinCache.contains(it.player.uniqueId)) {
+            val player = it.player
+            player.refreshPermissions(attch)
+            attachMap[player.uniqueId] = attch
+            if (!skinCache.contains(player.uniqueId)) {
                 GlobalScope.launch {
-                    val value = it.player.toSkinValue()
-                    it.player.guildPlayer?.skinValue = value
-                    skinCache[it.player.uniqueId] = value
+                    val value = player.toSkinValue()
+                    player.guildPlayer?.skinValue = value
+                    skinCache[player.uniqueId] = value
                 }
             }
-            queue[it.player.uniqueId]?.forEach { msg -> it.player.sendMessage(msg) }
+            queue[player.uniqueId]?.forEach { msg -> player.sendMessage(msg) }
+            player.tellInvite()
         }
 
         listen<EntityDeathEvent> {

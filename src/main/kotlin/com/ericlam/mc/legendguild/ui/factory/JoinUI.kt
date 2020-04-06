@@ -1,10 +1,12 @@
 package com.ericlam.mc.legendguild.ui.factory
 
 import com.ericlam.mc.kotlib.Clicker
+import com.ericlam.mc.kotlib.bukkit.BukkitPlugin
 import com.ericlam.mc.kotlib.row
 import com.ericlam.mc.legendguild.*
 import com.ericlam.mc.legendguild.dao.GuildPlayer
 import com.ericlam.mc.legendguild.ui.UIManager
+import de.tr7zw.nbtapi.NBTItem
 import org.bukkit.Material
 import org.bukkit.OfflinePlayer
 import org.bukkit.inventory.Inventory
@@ -16,17 +18,17 @@ object JoinUI : UIFactoryPaginated {
     private val inventories: MutableList<Inventory> = LinkedList()
 
     init {
-        UIManager.p.schedule(delay = 3, unit = TimeUnit.MINUTES) { updateInv() }
+        UIManager.p.schedule(period = 3, unit = TimeUnit.MINUTES) { updateInv() }
     }
 
     private fun updateInv() {
         inventories.forEach { it.viewers.forEach { p -> p.closeInventory() } }
         inventories.clear()
-        var inv = LeaderUI.createPage()
+        var inv = createPage()
         inventories.add(inv)
-        GuildManager.leaderBoard.forEach { guild ->
+        GuildManager.guildMap.forEach { guild ->
             if (inv.firstEmpty() == -1) {
-                inv = LeaderUI.createPage()
+                inv = createPage()
                 inventories.add(inv)
             }
             val lore = listOf(
@@ -40,12 +42,14 @@ object JoinUI : UIFactoryPaginated {
             ).apply {
                 itemMeta = itemMeta.toSkullMeta(pope?.skinValue ?: steveSkin)
             }
-            inv.addItem(item)
+            val nbt = NBTItem(item)
+            nbt.setString("guild.join", guild.name)
+            inv.addItem(nbt.item)
         }
     }
 
     override fun getPaginatedUI(bPlayer: OfflinePlayer): List<Inventory> {
-        return inventories
+        return if (inventories.isEmpty()) updateInv().let { inventories } else inventories
     }
 
     override val pageCache: MutableMap<OfflinePlayer, ListIterator<Inventory>> = mutableMapOf()
@@ -55,7 +59,8 @@ object JoinUI : UIFactoryPaginated {
                 rows = 6, title = "&a宗門列表一覽 (三分鐘更新一次)",
                 fills = mapOf(
                         0..53 to Clicker(UIManager.p.itemStack(Material.AIR)) { player, stack ->
-                            val guild = stack.itemMeta?.displayName?.removePrefix("§e") ?: return@Clicker
+                            val guild = NBTItem(stack).getString("guild.join") ?: return@Clicker
+                            BukkitPlugin.plugin.debug("${player.name} just clicked a button for joining $guild !")
                             val res = player.join(guild)
                             player.sendMessage(Lang[res.path].format(guild))
                         },
@@ -64,7 +69,7 @@ object JoinUI : UIFactoryPaginated {
         ) {
             mapOf(
                     6 row 1 to Clicker(UIFactoryPaginated.previous) { player, _ ->
-                        val iterator = JoinerUI.getIterator(player)
+                        val iterator = getIterator(player)
                         if (iterator.hasPrevious()) {
                             UIManager.openUI(player, iterator.previous())
                         } else {
@@ -72,7 +77,7 @@ object JoinUI : UIFactoryPaginated {
                         }
                     },
                     6 row 9 to Clicker(UIFactoryPaginated.next) { player, _ ->
-                        val iterator = JoinerUI.getIterator(player)
+                        val iterator = getIterator(player)
                         if (iterator.hasNext()) {
                             UIManager.openUI(player, iterator.next())
                         } else {

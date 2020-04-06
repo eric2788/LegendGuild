@@ -1,18 +1,22 @@
 package com.ericlam.mc.legendguild.ui.factory
 
 import com.ericlam.mc.kotlib.Clicker
+import com.ericlam.mc.kotlib.bukkit.BukkitPlugin
 import com.ericlam.mc.kotlib.catch
 import com.ericlam.mc.kotlib.row
 import com.ericlam.mc.legendguild.*
 import com.ericlam.mc.legendguild.dao.Guild
 import com.ericlam.mc.legendguild.dao.GuildPlayer
 import com.ericlam.mc.legendguild.ui.UIManager
+import de.tr7zw.nbtapi.NBTItem
 import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.OfflinePlayer
 import org.bukkit.entity.Player
 import org.bukkit.event.player.AsyncPlayerChatEvent
 import org.bukkit.inventory.Inventory
+import org.bukkit.inventory.ItemStack
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedDeque
 
@@ -22,10 +26,15 @@ object PromoteUI : UIFactoryPaginated {
     override val pageCache: MutableMap<OfflinePlayer, ListIterator<Inventory>> = ConcurrentHashMap()
     private val roleSetter: MutableMap<Player, GuildPlayer> = ConcurrentHashMap()
 
+
+    override fun customFilter(guild: Guild, item: ItemStack): Boolean {
+        return guild.members.map { it.name }.contains(NBTItem(item).getString("guild.head.owner"))
+    }
+
     init {
         UIManager.p.listen<AsyncPlayerChatEvent> {
             roleSetter.remove(it.player)?.also { gplayer ->
-                catch<IllegalArgumentException>({ e ->
+                catch<IllegalArgumentException>({ _ ->
                     it.player.sendMessage()
                 }) {
                     val newRole = GuildPlayer.Role.fromName(it.message)
@@ -49,8 +58,8 @@ object PromoteUI : UIFactoryPaginated {
                 rows = 6, title = "&a晉升成員",
                 fills = mapOf(
                         0..53 to Clicker(UIManager.p.itemStack(Material.AIR)) { player, stack ->
-                            val playerName = stack.itemMeta?.displayName?.removePrefix("§e") ?: return@Clicker
-                            val gPlayer = Bukkit.getPlayerUniqueId(playerName)?.let { Bukkit.getOfflinePlayer(it).guildPlayer }
+                            val uuid = NBTItem(stack).getString("guild.head.owner") ?: return@Clicker
+                            val gPlayer = UUID.fromString(uuid)?.let { Bukkit.getOfflinePlayer(it).guildPlayer }
                                     ?: let {
                                         player.sendMessage(Lang["player-not-found"])
                                         return@Clicker
@@ -113,12 +122,22 @@ object PromoteUI : UIFactoryPaginated {
     }
 
     override fun addPlayer(player: OfflinePlayer) {
-        val g = player.guild ?: return
-        val gPlayer = player.guildPlayer ?: return
-        var inv = paginatedCaches[g]?.lastOrNull() ?: return
-        while (inv.firstEmpty() == -1) {
+        val g = player.guild ?: let {
+            BukkitPlugin.plugin.debug("cannot find guild of ${player.name}")
+            return
+        }
+        val gPlayer = player.guildPlayer ?: let {
+            BukkitPlugin.plugin.debug("cannot find guildPlayer of ${player.name}")
+            return
+        }
+        var inv = getPaginatedUI(player).lastOrNull() ?: let {
+            BukkitPlugin.plugin.debug("promote inventory of guild ${g.name} is empty")
+            return
+        }
+        BukkitPlugin.plugin.debug("${this::class.simpleName} adding player ${player.name} in guild inventory ${g.name}")
+        if (inv.firstEmpty() == -1) {
             inv = createPage()
-            paginatedCaches[g]!!.add(inv)
+            paginatedCaches[g]?.add(inv) ?: BukkitPlugin.plugin.debug("paginatedCaches[g] is null")
         }
         inv.addItem(gPlayer.toSkull {
             listOf(

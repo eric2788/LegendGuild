@@ -6,7 +6,7 @@
 
     <groupId>com.ericlam.mc</groupId>
     <artifactId>LegendGuild</artifactId>
-    <version>0.3.5.7-SNAPSHOT</version>
+    <version>0.3.6.6-SNAPSHOT</version>
 
     <properties>
         <kotlin.version>1.3.61</kotlin.version>
@@ -15,11 +15,7 @@
     <repositories>
         <repository>
             <id>xuan</id>
-            <url>http://xuan.nctu.me:8081/repository/Maven/</url>
-        </repository>
-        <repository>
-            <id>papermc</id>
-            <url>https://papermc.io/repo/repository/maven-public/</url>
+            <url>https://xuan.nctu.me:8081/repository/Maven/</url>
         </repository>
         <repository>
             <id>jitpack.io</id>
@@ -52,14 +48,14 @@
         </dependency>
         <dependency>
             <groupId>com.ericlam.mc</groupId>
-            <artifactId>KotLib-API</artifactId>
+            <artifactId>kotlib-api</artifactId>
             <version>0.2.7</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>com.destroystokyo.paper</groupId>
-            <artifactId>paper-api</artifactId>
-            <version>1.12.2-R0.1-SNAPSHOT</version>
+            <groupId>patched</groupId>
+            <artifactId>1.12</artifactId>
+            <version>R1</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -78,6 +74,12 @@
             <artifactId>VaultAPI</artifactId>
             <version>1.7</version>
             <scope>provided</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.bukkit</groupId>
+                    <artifactId>bukkit</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.black_ixx</groupId>

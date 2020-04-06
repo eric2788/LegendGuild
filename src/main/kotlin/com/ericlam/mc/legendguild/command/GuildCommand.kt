@@ -38,11 +38,15 @@ object GuildCommand : BukkitCommand(
                         name = "pvp",
                         description = "宗門戰爭接受或拒絕指令",
                         permission = "guild.war.handle",
-                        placeholders = arrayOf("declined | accepted")
+                        optionalPlaceholders = arrayOf("decline | accept")
                 ) { commandSender, strings ->
                     val player = commandSender.toPlayer ?: return@BukkitCommand
                     val guild = player.guild ?: run {
                         player.sendMessage(Lang["not-in-guild"])
+                        return@BukkitCommand
+                    }
+                    if (strings.isEmpty()) {
+                        UIManager.openUI(player, PvPUI)
                         return@BukkitCommand
                     }
                     val accept = strings[0].equals("accept", ignoreCase = true)
@@ -88,14 +92,14 @@ object GuildCommand : BukkitCommand(
                         return@BukkitCommand
                     }
                     guild.invites.add(target.uniqueId)
-                    target.notify(Lang["invited"].format(guild.name))
+                    target.player?.tellInvite()
                     player.tellSuccess()
                 },
                 BukkitCommand(
                         name = "join",
                         description = "開啟申請宗門列表 玩家可以選擇有開放招募玩家狀",
                         permission = "guild.join"
-                ) { commandSender, strings ->
+                ) { commandSender, _ ->
                     val player = commandSender.toPlayer ?: return@BukkitCommand
                     UIManager.openUI(player, JoinUI)
                 },
@@ -131,6 +135,41 @@ object GuildCommand : BukkitCommand(
                     val player = commandSender.toPlayer ?: return@BukkitCommand
                     player.sendMessage(Lang[if (player.leaveGuild()) "success" else "not-in-guild"])
                 },
+                BukkitCommand(
+                        name = "response",
+                        description = "回應邀請",
+                        child = arrayOf(
+                                BukkitCommand(
+                                        name = "accept",
+                                        description = "答應請求",
+                                        placeholders = arrayOf("guild")
+                                ) { sender, arr ->
+                                    val player = sender.toPlayer ?: return@BukkitCommand
+                                    val g = LegendGuild.guildController.findById(arr[0]) ?: run {
+                                        player.sendMessage(Lang["unknown-guild"])
+                                        return@BukkitCommand
+                                    }
+                                    g.invites.remove(player.uniqueId).takeIf { true }?.run {
+                                        player.joinGuild(arr[0])
+                                        player.tellSuccess()
+                                    } ?: player.sendMessage(Lang["not-invited"])
+                                },
+                                BukkitCommand(
+                                        name = "decline",
+                                        description = "拒絕請求",
+                                        placeholders = arrayOf("guild")
+                                ) { sender, arr ->
+                                    val player = sender.toPlayer ?: return@BukkitCommand
+                                    val g = LegendGuild.guildController.findById(arr[0]) ?: run {
+                                        player.sendMessage(Lang["unknown-guild"])
+                                        return@BukkitCommand
+                                    }
+                                    g.invites.remove(player.uniqueId).takeIf { true }?.run {
+                                        player.tellSuccess()
+                                    } ?: player.sendMessage(Lang["not-invited"])
+                                }
+                        )
+                ),
                 BukkitCommand(
                         name = "shop",
                         description = "宗門商店指令",

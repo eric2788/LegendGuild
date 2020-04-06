@@ -150,7 +150,7 @@ object MainUI : UIFactory {
                         }
                     }
                     if (player.role hasPower GuildPlayer.Role.CO_POPE) {
-                        this += 5 row 2 to Clicker(Admin.salarySet) { p, _ ->
+                        this += 5 row 3 to Clicker(Admin.salarySet) { p, _ ->
                             UIManager.openUI(p, SalaryUI)
                         }
                     }
@@ -224,7 +224,7 @@ object MainUI : UIFactory {
                 2 row 8 to resources //info
         ).apply {
             if (player.guildPlayer?.role?.hasPower(GuildPlayer.Role.ELDER) == true) {
-                this += 5 row 1 to if (guild.public) Admin.publicStatus else Admin.privateStatus
+                this += 5 row 2 to if (guild.public) Admin.publicStatus else Admin.privateStatus
             }
         }.forEach { (slot, stack) ->
             inventory.setItem(slot, stack)

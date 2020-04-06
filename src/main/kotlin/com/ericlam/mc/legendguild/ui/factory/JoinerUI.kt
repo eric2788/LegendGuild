@@ -5,15 +5,13 @@ import com.ericlam.mc.kotlib.bukkit.BukkitPlugin
 import com.ericlam.mc.kotlib.row
 import com.ericlam.mc.legendguild.*
 import com.ericlam.mc.legendguild.dao.Guild
-import com.ericlam.mc.legendguild.dao.GuildPlayer
 import com.ericlam.mc.legendguild.ui.UIManager
 import de.tr7zw.nbtapi.NBTItem
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
 import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.OfflinePlayer
 import org.bukkit.inventory.Inventory
+import org.bukkit.inventory.ItemStack
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedDeque
@@ -23,6 +21,10 @@ object JoinerUI : UIFactoryPaginated {
     override val paginatedCaches: MutableMap<Guild, MutableList<Inventory>> = ConcurrentHashMap()
 
     override val pageCache: MutableMap<OfflinePlayer, ListIterator<Inventory>> = ConcurrentHashMap()
+
+    override fun customFilter(guild: Guild, item: ItemStack): Boolean {
+        return !guild.members.map { m -> m.name }.contains(NBTItem(item).getString("guild.head.owner"))
+    }
 
     override fun createPage(): Inventory {
         return UIManager.p.createGUI(
@@ -40,28 +42,19 @@ object JoinerUI : UIFactoryPaginated {
                                     }
 
                             val playerName = Bukkit.getOfflinePlayer(uuid).name ?: "[找不到名稱]"
-
+                            BukkitPlugin.plugin.debug("${player.name} just clicked a button for accepting $playerName !")
                             when {
                                 isLeftClick -> {
-                                    with(LegendGuild.guildPlayerController) {
-                                        if (findById(uuid) != null) {
-                                            player.sendMessage(Lang["joined-guild"].format(playerName))
-                                            return@Clicker
-                                        }
-                                        val offline = Bukkit.getOfflinePlayer(uuid)
-                                        GlobalScope.launch {
-                                            val skin = offline.toSkinValue()
-                                            save { GuildPlayer(uuid, offline.name, guild.name, skin) }
-                                        }.invokeOnCompletion {
-                                            it?.printStackTrace().also { player.tellFailed() }
-                                                    ?: player.tellSuccess().also {
-                                                        PromoteUI.addPlayer(offline)
-                                                        offline.player?.refreshPermissions(LegendGuild.attachment(offline.player))
-                                                    }
-                                        }
+                                    if (LegendGuild.guildPlayerController.findById(uuid) != null) {
+                                        player.sendMessage(Lang["joined-guild"].format(playerName))
+                                        return@Clicker
                                     }
+                                    val offline = Bukkit.getOfflinePlayer(uuid)
+                                    BukkitPlugin.plugin.debug("the accept of ${player.name} is left click")
+                                    offline.joinGuild(guild.name)
                                 }
                                 isRightClick -> {
+                                    BukkitPlugin.plugin.debug("the accept of ${player.name} is right click")
                                     player.tellSuccess()
                                 }
                                 else -> {
@@ -98,19 +91,27 @@ object JoinerUI : UIFactoryPaginated {
 
     override fun addPlayer(player: OfflinePlayer) {
         val inventories = paginatedCaches.keys.find { g -> g.wannaJoins.contains(player.uniqueId) }?.let { paginatedCaches[it] }
-                ?: return
-        var inv = inventories.lastOrNull() ?: return
+                ?: let {
+                    BukkitPlugin.plugin.debug("joiner: cannot find any guild inventories, use getPaginatedUI method")
+                    getPaginatedUI(player)
+                    return
+                }
+        var inv = inventories.lastOrNull() ?: let {
+            BukkitPlugin.plugin.debug("joiner inventories is empty")
+            return
+        }
+        BukkitPlugin.plugin.debug("${this::class.simpleName} adding player ${player.name}")
         while (inv.firstEmpty() == -1) {
             inv = createPage()
             inventories.add(inv)
         }
-        inv.addItem(player.skullItem)
+        inv.addItem(player.joinerSkull)
     }
 
     override fun getPaginatedUI(bPlayer: OfflinePlayer): List<Inventory> {
         val guild = bPlayer.guild ?: return emptyList()
         BukkitPlugin.plugin.debug("joiner current paginatedCaches size: ${paginatedCaches.size}")
-        BukkitPlugin.plugin.debug("joiner current paginatedCaches details: ${paginatedCaches.map { "${it.key.name} => ${it.value.flatMap { i -> i.contents.toList() }.map { s -> s.toString() }}" }}")
+        BukkitPlugin.plugin.debug("joiner current paginatedCaches details: ${paginatedCaches.map { "${it.key.name} => ${it.value.size}" }}")
         return paginatedCaches[guild] ?: let {
             BukkitPlugin.plugin.debug("initializing joiner inventory list for ${guild.name}")
             val inventories = mutableListOf<Inventory>()
@@ -119,7 +120,7 @@ object JoinerUI : UIFactoryPaginated {
             val queue = ConcurrentLinkedDeque(guild.wannaJoins.mapNotNull { Bukkit.getOfflinePlayer(it) })
             while (queue.isNotEmpty()) {
                 val gPlayer = queue.poll()
-                val skull = gPlayer.skullItem
+                val skull = gPlayer.joinerSkull
                 currentInv.addItem(skull)
                 if (currentInv.firstEmpty() == -1) {
                     currentInv = createPage()
