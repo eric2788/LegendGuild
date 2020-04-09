@@ -28,7 +28,7 @@ interface UIFactoryPaginated : UIFactory {
     }
 
     fun getIterator(bPlayer: OfflinePlayer): ListIterator<Inventory> {
-        return pageCache[bPlayer] ?: getPaginatedUI(bPlayer).listIterator().also { pageCache[bPlayer] = it }
+        return pageCache[bPlayer] ?: getPaginatedUI(bPlayer).toList().listIterator().also { pageCache[bPlayer] = it }
     }
 
     fun createPage(): Inventory

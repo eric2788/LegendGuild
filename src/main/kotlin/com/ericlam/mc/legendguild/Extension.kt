@@ -45,6 +45,7 @@ fun OfflinePlayer.leaveGuild(): Boolean {
     val gp = this.guildPlayer ?: return false
     return if (gp.role != GuildPlayer.Role.POPE) {
         LegendGuild.guildPlayerController.delete(this.uniqueId)
+        UIManager.clearCache(this)
         true
     } else {
         val list = LegendGuild.guildPlayerController.find { guild == name }.mapNotNull { Bukkit.getOfflinePlayer(it.uuid) }
@@ -207,6 +208,9 @@ val GuildManager.CreateResponse.path: String
         }
     }
 
+val ItemStack.toBukkitItemStack: ItemStack
+    get() = ItemStack(this)
+
 fun Player.addItem(stack: ItemStack, price: Int) {
     val guild = this.guild ?: let {
         this.sendMessage(Lang["not-in-guild"])
@@ -215,13 +219,6 @@ fun Player.addItem(stack: ItemStack, price: Int) {
     guildPlayer?.role?.not(GuildPlayer.Role.ELDER) ?: let {
         this.sendMessage(Lang["no-perm"])
         return
-    }
-    val inventories = ShopUI.paginatedCaches.keys.find { it == guild }?.let { ShopUI.paginatedCaches[it] }
-            ?: throw IllegalStateException("cannot find ui for ${guild.name}")
-    var inv = inventories.lastOrNull() ?: throw IllegalStateException("shop ui inventory list is empty")
-    while (inv.firstEmpty() == -1) {
-        inv = JoinerUI.createPage()
-        inventories.add(inv)
     }
     val item = UIManager.p.itemStack(stack.type, display = stack.itemMeta?.displayName ?: stack.type.toString(),
             lore = (stack.itemMeta?.lore ?: emptyList()) + listOf(
@@ -236,7 +233,8 @@ fun Player.addItem(stack: ItemStack, price: Int) {
     val nbtItem = NBTItem(item)
     nbtItem.setString("guild.shop", id.toString())
     nbtItem.setString("guild.shop.seller", this.uniqueId.toString())
-    inv.addItem(nbtItem.item)
+    BukkitPlugin.plugin.debug("$name uploaded an item $id with price $price")
+    ShopUI.addProduct(this, nbtItem.item)
     this.tellSuccess()
 }
 
@@ -293,30 +291,43 @@ fun OfflinePlayer.notify(msg: String) {
 }
 
 fun Player.tellInvite() {
+    BukkitPlugin.plugin.debug("tell invite to $name")
     GuildManager.guildMap.filter { g -> g.invites.contains(this.uniqueId) }.forEach { g ->
         this.sendMessage(Lang["invited"].format(g.name))
         val yes = ComponentBuilder("答應請求").color(ChatColor.GREEN).underlined(true).event(ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/guild response accept ${g.name}"))
         val no = ComponentBuilder("拒絕請求").color(ChatColor.RED).underlined(true).event(ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/guild response decline ${g.name}"))
         val text = ComponentBuilder("[").color(ChatColor.GRAY).append(yes.create()).append("|").append(no.create()).append("]").create()
         this.spigot().sendMessage(*text)
+        BukkitPlugin.plugin.debug("tell invite to $name for joining guild ${g.name}")
     }
 }
 
 val queue: MutableMap<UUID, MutableSet<String>> = ConcurrentHashMap()
 
 
-fun OfflinePlayer.joinGuild(name: String) {
+fun OfflinePlayer.joinGuild(gName: String) {
+    BukkitPlugin.plugin.debug("${this.name} prepare to join guild $gName")
     val con = LegendGuild.guildPlayerController
-    if (LegendGuild.guildController.findById(name) == null) return
+    if (LegendGuild.guildController.findById(gName) == null) {
+        BukkitPlugin.plugin.debug("${this.name} already has guild, so skipped")
+        return
+    }
     GlobalScope.launch {
         val skin = toSkinValue()
-        con.save { GuildPlayer(uniqueId, name, name, skin) }
+        con.save { GuildPlayer(uniqueId, name, gName, skin) }
     }.invokeOnCompletion {
-        it?.printStackTrace().also { player.tellFailed() }
+        it?.printStackTrace()?.also {
+            BukkitPlugin.plugin.debug("error appeared, so failed")
+            player.tellFailed()
+        }
                 ?: player.tellSuccess().also {
-                    BukkitPlugin.plugin.debug("preparing to add ${player.name} in PromoteUI")
-                    PromoteUI.addPlayer(this)
-                    this.player?.refreshPermissions(LegendGuild.attachment(this.player))
+                    BukkitPlugin.plugin.debug("successfully save $name to guild $gName")
+                    val off = this
+                    UIManager.p.schedule { // run in main thread
+                        BukkitPlugin.plugin.debug("preparing to add ${player.name} in PromoteUI")
+                        PromoteUI.addPlayer(off)
+                        off.player?.refreshPermissions(LegendGuild.attachment(off.player))
+                    }
                 }
     }
 }

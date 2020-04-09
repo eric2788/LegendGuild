@@ -33,7 +33,6 @@ class LegendGuild : BukkitPlugin() {
         private val attachMap: MutableMap<UUID, PermissionAttachment> = ConcurrentHashMap()
         fun attachment(player: Player): PermissionAttachment = attachMap[player.uniqueId]
                 ?: player.addAttachment(plugin).also { attachMap[player.uniqueId] = it }
-
         private lateinit var _config: Config
         private lateinit var _lang: Lang
         private lateinit var _item: Items

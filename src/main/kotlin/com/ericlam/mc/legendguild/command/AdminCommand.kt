@@ -59,8 +59,16 @@ object AdminCommand : BukkitCommand(
                         commandSender.sendMessage(Lang["player-not-found"])
                         return@BukkitCommand
                     }
-                    val res = target.join(strings[1])
-                    commandSender.sendMessage(Lang[if (res == JoinResponse.SUCCESS) "success" else "failed"])
+                    val guild = LegendGuild.guildController.findById(strings[1]) ?: run {
+                        commandSender.sendMessage(Lang["unknown-guild"])
+                        return@BukkitCommand
+                    }
+                    if (target.guild != null) {
+                        commandSender.sendMessage(Lang["joined-guild"].format(target))
+                        return@BukkitCommand
+                    }
+                    target.joinGuild(guild.name)
+                    commandSender.tellSuccess()
                 },
                 BukkitCommand(
                         name = "kick",
@@ -164,11 +172,12 @@ object AdminCommand : BukkitCommand(
                         commandSender.sendMessage(Lang["not-number"].format(strings[1]))
                         return@BukkitCommand
                     }
-                    val gp = target.guildPlayer ?: run {
+                    LegendGuild.guildPlayerController.update(target.uniqueId) {
+                        this.contribution += num
+                    } ?: run {
                         commandSender.sendMessage(Lang["not-in-guild"])
                         return@BukkitCommand
                     }
-                    gp.contribution += num
                     commandSender.tellSuccess()
                 },
                 BukkitCommand(

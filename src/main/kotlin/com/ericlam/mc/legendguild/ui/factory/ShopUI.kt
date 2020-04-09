@@ -12,6 +12,7 @@ import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.OfflinePlayer
 import org.bukkit.inventory.Inventory
+import org.bukkit.inventory.ItemStack
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedDeque
@@ -45,6 +46,20 @@ object ShopUI : UIFactoryPaginated {
         }
     }
 
+    fun addProduct(p: OfflinePlayer, item: ItemStack) {
+        val inventories = paginatedCaches[p.guild] ?: let {
+            val i = getPaginatedUI(p)
+            if (i.isNotEmpty()) return addProduct(p, item)
+            else return
+        }
+        var inv = inventories.lastOrNull() ?: throw IllegalStateException("shop ui inventory list is empty")
+        if (inv.firstEmpty() == -1) {
+            inv = createPage()
+            inventories.add(inv)
+        }
+        inv.addItem(item)
+    }
+
     override val pageCache: MutableMap<OfflinePlayer, ListIterator<Inventory>> = ConcurrentHashMap()
 
     override val paginatedCaches: MutableMap<Guild, MutableList<Inventory>> = ConcurrentHashMap()
@@ -55,7 +70,10 @@ object ShopUI : UIFactoryPaginated {
                 fills = mapOf(
                         0..53 to Clicker(UIManager.p.itemStack(Material.AIR)) { player, stack ->
                             val nbtPlayer = NBTEntity(player)
-                            val id = NBTItem(stack).getString("guild.shop")?.let { UUID.fromString(it) }
+                            val id = NBTItem(stack).getString("guild.shop")?.let {
+                                BukkitPlugin.plugin.debug("clicked item $it, casting to UUID")
+                                UUID.fromString(it)
+                            }
                             when (nbtPlayer.getString("guild.admin.operate")) {
                                 "shop.set" -> {
                                     clickedInventory?.remove(stack)

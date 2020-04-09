@@ -141,7 +141,7 @@ object GuildManager {
                 ContributeResponse.SUCCESS
             } else {
                 ContributeResponse.NOT_ENOUGH_MONEY
-            }
+            }.also { guildPlayerController.save { p } }
         }
     }
 
@@ -157,7 +157,7 @@ object GuildManager {
                 ContributeResponse.SUCCESS
             } else {
                 ContributeResponse.NOT_ENOUGH_MONEY
-            }
+            }.also { guildPlayerController.save { p } }
         }
     }
 

@@ -1,11 +1,13 @@
 package com.ericlam.mc.legendguild.command
 
+import com.ericlam.mc.kotlib.bukkit.BukkitPlugin
 import com.ericlam.mc.kotlib.command.BukkitCommand
 import com.ericlam.mc.legendguild.*
 import com.ericlam.mc.legendguild.dao.GuildPlayer
 import com.ericlam.mc.legendguild.ui.UIManager
 import com.ericlam.mc.legendguild.ui.factory.*
 import de.tr7zw.nbtapi.NBTItem
+import org.bukkit.inventory.ItemStack
 import java.util.*
 
 object GuildCommand : BukkitCommand(
@@ -151,7 +153,6 @@ object GuildCommand : BukkitCommand(
                                     }
                                     g.invites.remove(player.uniqueId).takeIf { true }?.run {
                                         player.joinGuild(arr[0])
-                                        player.tellSuccess()
                                     } ?: player.sendMessage(Lang["not-invited"])
                                 },
                                 BukkitCommand(
@@ -185,15 +186,10 @@ object GuildCommand : BukkitCommand(
                                         sender.sendMessage(Lang["not-number"].format(args[1]))
                                         return@BukkitCommand
                                     }
-                                    val itemC = LegendGuild.item
-                                    if (itemC.items.containsKey(args[0])) {
-                                        sender.sendMessage(Lang.Shop["same-name"])
-                                        return@BukkitCommand
-                                    }
-                                    val item = player.inventory.itemInMainHand
-                                    player.addItem(item, price)
-                                    itemC.items[args[0]] = item
-                                    itemC.save()
+                                    val item = player.inventory.itemInMainHand.toBukkitItemStack
+                                    val nbt = NBTItem(item)
+                                    nbt.setString("guild.sell.name", args[0])
+                                    player.addItem(nbt.item, price)
                                 },
                                 BukkitCommand(
                                         name = "remove",
@@ -203,21 +199,20 @@ object GuildCommand : BukkitCommand(
                                 ) { sender, args ->
                                     val player = sender.toPlayer ?: return@BukkitCommand
                                     val name = args[0]
-                                    val itemC = LegendGuild.item
-                                    val item = itemC.items[name] ?: run {
-                                        sender.sendMessage(Lang.Shop["unknown-item"])
-                                        return@BukkitCommand
-                                    }
+                                    fun find(item: ItemStack): Boolean = NBTItem(item).getString("guild.sell.name") == name
+                                    val item = ShopUI.getPaginatedUI(player).find { inv -> inv.any(::find) }?.find(::find)
+                                            ?: run {
+                                                BukkitPlugin.plugin.debug("cannot find item $name")
+                                                player.sendMessage(Lang.Shop["unknown-item"])
+                                                return@BukkitCommand
+                                            }
                                     val nbtI = NBTItem(item).getString("guild.shop.seller")
                                     val owner = nbtI?.let {
                                         val uuid = UUID.fromString(it)
                                         uuid == player.uniqueId
                                     } ?: false
                                     if (owner) {
-                                        if (player.removeItem(item)) player.tellSuccess().also {
-                                            itemC.items.remove(name)
-                                            itemC.save()
-                                        } else player.tellFailed()
+                                        if (player.removeItem(item)) player.tellSuccess() else player.tellFailed()
                                     } else {
                                         player.sendMessage(Lang.Shop["not-owner"])
                                     }

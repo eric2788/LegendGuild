@@ -130,15 +130,25 @@ object PromoteUI : UIFactoryPaginated {
             BukkitPlugin.plugin.debug("cannot find guildPlayer of ${player.name}")
             return
         }
-        var inv = getPaginatedUI(player).lastOrNull() ?: let {
+        val inventories = paginatedCaches[g] ?: let {
+            val i = getPaginatedUI(player)
+            if (i.isNotEmpty()) return addPlayer(player)
+            else {
+                BukkitPlugin.plugin.debug("promote inventory of guild ${g.name} is empty")
+                return
+            }
+        }
+        var inv = inventories.lastOrNull() ?: let {
             BukkitPlugin.plugin.debug("promote inventory of guild ${g.name} is empty")
             return
         }
         BukkitPlugin.plugin.debug("${this::class.simpleName} adding player ${player.name} in guild inventory ${g.name}")
         if (inv.firstEmpty() == -1) {
+            BukkitPlugin.plugin.debug("last inventory fulled, creating new one for promoteUI")
             inv = createPage()
-            paginatedCaches[g]?.add(inv) ?: BukkitPlugin.plugin.debug("paginatedCaches[g] is null")
+            inventories.add(inv)
         }
+        BukkitPlugin.plugin.debug("adding skull item to promoteUI")
         inv.addItem(gPlayer.toSkull {
             listOf(
                     "&e貢獻值:&7 $contribution",
