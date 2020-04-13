@@ -1,6 +1,7 @@
 package com.ericlam.mc.legendguild.ui.factory
 
 import com.ericlam.mc.kotlib.Clicker
+import com.ericlam.mc.kotlib.bukkit.BukkitPlugin
 import com.ericlam.mc.kotlib.row
 import com.ericlam.mc.legendguild.*
 import com.ericlam.mc.legendguild.dao.GuildPlayer
@@ -27,6 +28,7 @@ object LeaderUI : UIFactoryPaginated {
         inventories.clear()
         var inv = createPage()
         inventories.add(inv)
+        BukkitPlugin.plugin.debug("updating ${this::class} info")
         GuildManager.leaderBoard.forEach { guild ->
             if (inv.firstEmpty() == -1) {
                 inv = createPage()

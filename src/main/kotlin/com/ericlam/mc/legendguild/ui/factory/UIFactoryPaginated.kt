@@ -40,6 +40,7 @@ interface UIFactoryPaginated : UIFactory {
 
     fun updatePaginatedInfo(guild: Guild, inventories: MutableList<Inventory>) {
         val invs = inventories.takeIf { it.isNotEmpty() } ?: return
+        BukkitPlugin.plugin.debug("updating ${this::class} paginated info for ${guild.name}")
         invs.takeIf { it.size > 1 }?.reduce { inv1, inv2 ->
             val iterator = inv2.iterator()
             while (inv1.firstEmpty() != -1 && iterator.hasNext()) {

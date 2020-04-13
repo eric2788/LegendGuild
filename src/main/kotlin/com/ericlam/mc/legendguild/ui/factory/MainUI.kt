@@ -1,6 +1,7 @@
 package com.ericlam.mc.legendguild.ui.factory
 
 import com.ericlam.mc.kotlib.Clicker
+import com.ericlam.mc.kotlib.bukkit.BukkitPlugin
 import com.ericlam.mc.kotlib.row
 import com.ericlam.mc.legendguild.*
 import com.ericlam.mc.legendguild.dao.GuildPlayer
@@ -216,6 +217,7 @@ object MainUI : UIFactory {
                 display = "&b公會資源",
                 lore = guild.resource.items.map { "${Lang.Item[it.key]}: ${it.value} 個" }.toList()
         )
+        BukkitPlugin.plugin.debug("updating ${this::class} info for ${guild.name}")
         mutableMapOf(
                 1 row 5 to describe, //info
                 2 row 2 to member, //info

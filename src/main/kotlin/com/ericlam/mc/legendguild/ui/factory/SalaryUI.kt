@@ -1,6 +1,7 @@
 package com.ericlam.mc.legendguild.ui.factory
 
 import com.ericlam.mc.kotlib.Clicker
+import com.ericlam.mc.kotlib.bukkit.BukkitPlugin
 import com.ericlam.mc.legendguild.Lang
 import com.ericlam.mc.legendguild.LegendGuild
 import com.ericlam.mc.legendguild.dao.Guild
@@ -73,6 +74,7 @@ object SalaryUI : UIFactory {
 
     override fun updateGInfo(guild: Guild, inventory: Inventory) {
         val roleMap = GuildPlayer.Role.values() zip (0..8 step 2)
+        BukkitPlugin.plugin.debug("updating ${this::class} info for ${guild.name}")
         roleMap.forEach { (role, slot) ->
             val salary = guild.salaries[role] ?: return@forEach
             val item = UIManager.p.itemStack(Material.EMERALD_BLOCK,

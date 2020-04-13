@@ -107,6 +107,7 @@ object PvPUI : UIFactoryPaginated {
                     "&e人數: ${g.members.size}",
                     "&a左鍵大型右鍵小型"
             )
+            BukkitPlugin.plugin.debug("updating ${this::class} info for ${g.name}")
             val item = UIManager.p.itemStack(Material.PAPER, display = "&b${g.name}", lore = lore)
             val nbItem = NBTItem(item)
             nbItem.setString("guild.name", g.name)

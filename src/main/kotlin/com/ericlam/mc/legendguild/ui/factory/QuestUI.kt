@@ -1,6 +1,7 @@
 package com.ericlam.mc.legendguild.ui.factory
 
 import com.ericlam.mc.kotlib.Clicker
+import com.ericlam.mc.kotlib.bukkit.BukkitPlugin
 import com.ericlam.mc.legendguild.*
 import com.ericlam.mc.legendguild.dao.QuestPlayer
 import com.ericlam.mc.legendguild.dao.QuestType
@@ -71,6 +72,7 @@ object QuestUI : UIFactory {
                         "&e擊殺怪物:&f ${quest.progress.first}/${quest.progress.second}",
                         "&b還有 ${(quest.progress.second - quest.progress.first).coerceAtLeast(0)} 隻怪物需要擊殺。"
                 ))
+        BukkitPlugin.plugin.debug("updating ${this::class} info for ${player.name}")
         inventory.setItem(8, progress)
     }
 }

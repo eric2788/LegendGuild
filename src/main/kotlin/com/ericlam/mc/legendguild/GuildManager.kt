@@ -141,7 +141,10 @@ object GuildManager {
                 ContributeResponse.SUCCESS
             } else {
                 ContributeResponse.NOT_ENOUGH_MONEY
-            }.also { guildPlayerController.save { p } }
+            }.also {
+                guildPlayerController.save { p }
+                guildController.save { g }
+            }
         }
     }
 
@@ -157,7 +160,10 @@ object GuildManager {
                 ContributeResponse.SUCCESS
             } else {
                 ContributeResponse.NOT_ENOUGH_MONEY
-            }.also { guildPlayerController.save { p } }
+            }.also {
+                guildPlayerController.save { p }
+                guildController.save { g }
+            }
         }
     }
 
@@ -169,7 +175,10 @@ object GuildManager {
                 ResourceType.MONEY -> if (economy.withdrawPlayer(player, config.postResources.money).transactionSuccess()) {
                     g.resource.money += config.postResources.money
                     p.contribution += config.postResources.money_contribute
-                    ResourceResponse.SUCCESS
+                    ResourceResponse.SUCCESS.also {
+                        guildController.save { g }
+                        guildPlayerController.save { p }
+                    }
                 } else {
                     ResourceResponse.NOT_ENOUGH_MONEY
                 }
@@ -184,7 +193,10 @@ object GuildManager {
                             p.contribution += it
                             g.resource.items[key] = (g.resource.items[key] ?: 0) + it
                             player.itemOnCursor = null
-                        }?.let { ResourceResponse.SUCCESS } ?: ResourceResponse.INVALID_ITEM
+                        }?.let { ResourceResponse.SUCCESS }?.also {
+                            guildController.save { g }
+                            guildPlayerController.save { p }
+                        } ?: ResourceResponse.INVALID_ITEM
                     }
                 }
             }

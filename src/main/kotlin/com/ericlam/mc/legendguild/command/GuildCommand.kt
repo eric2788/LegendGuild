@@ -186,7 +186,7 @@ object GuildCommand : BukkitCommand(
                                         sender.sendMessage(Lang["not-number"].format(args[1]))
                                         return@BukkitCommand
                                     }
-                                    val item = player.inventory.itemInMainHand.toBukkitItemStack
+                                    val item = player.inventory.itemInMainHand
                                     val nbt = NBTItem(item)
                                     nbt.setString("guild.sell.name", args[0])
                                     player.addItem(nbt.item, price)

@@ -220,21 +220,21 @@ fun Player.addItem(stack: ItemStack, price: Int) {
         this.sendMessage(Lang["no-perm"])
         return
     }
-    val item = UIManager.p.itemStack(stack.type, display = stack.itemMeta?.displayName ?: stack.type.toString(),
-            lore = (stack.itemMeta?.lore ?: emptyList()) + listOf(
-                    "&7==========================",
-                    "&e擁有人: &f$displayName",
-                    "&e價格: &f$price 貢獻值"
-            ))
     val id = UUID.randomUUID()
     LegendGuild.guildShopController.update(guild.name) {
         items[id] = GuildShopItems.ShopItem(price, stack, uniqueId)
     }
-    val nbtItem = NBTItem(item)
+    val nbtItem = NBTItem(stack.clone())
     nbtItem.setString("guild.shop", id.toString())
     nbtItem.setString("guild.shop.seller", this.uniqueId.toString())
     BukkitPlugin.plugin.debug("$name uploaded an item $id with price $price")
-    ShopUI.addProduct(this, nbtItem.item)
+    val item = nbtItem.item
+    item.lore = (item.lore ?: listOf()) + listOf(
+            "&7==========================",
+            "&e擁有人: &f$displayName",
+            "&e價格: &f$price 貢獻值"
+    )
+    ShopUI.addProduct(this, item)
     this.tellSuccess()
 }
 

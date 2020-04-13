@@ -148,13 +148,14 @@ object PromoteUI : UIFactoryPaginated {
             inv = createPage()
             inventories.add(inv)
         }
-        BukkitPlugin.plugin.debug("adding skull item to promoteUI")
-        inv.addItem(gPlayer.toSkull {
+        val skull = gPlayer.toSkull {
             listOf(
                     "&e貢獻值:&7 $contribution",
                     "&e身份:&7 ${role.ch}",
                     "點擊以輸入晉升職位"
             )
-        })
+        }
+        BukkitPlugin.plugin.debug("adding skull item to promoteUI: $skull")
+        inv.addItem(skull)
     }
 }
