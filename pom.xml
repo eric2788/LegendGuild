@@ -6,7 +6,7 @@
 
     <groupId>com.ericlam.mc</groupId>
     <artifactId>LegendGuild</artifactId>
-    <version>0.3.7.1-SNAPSHOT</version>
+    <version>0.3.7.2-SNAPSHOT</version>
 
     <properties>
         <kotlin.version>1.3.61</kotlin.version>
@@ -49,7 +49,7 @@
         <dependency>
             <groupId>com.ericlam.mc</groupId>
             <artifactId>kotlib-api</artifactId>
-            <version>0.2.7</version>
+            <version>0.2.7.9</version>
             <scope>provided</scope>
         </dependency>
         <dependency>

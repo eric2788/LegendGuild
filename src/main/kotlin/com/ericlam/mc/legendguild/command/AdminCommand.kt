@@ -80,6 +80,7 @@ object AdminCommand : BukkitCommand(
                         return@BukkitCommand
                     }
                     commandSender.sendMessage(Lang[if (target.leaveGuild()) "success" else "failed"])
+                    target.notify(Lang["kicked"])
                 },
                 BukkitCommand(
                         name = "setlv",

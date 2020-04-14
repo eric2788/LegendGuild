@@ -24,6 +24,7 @@ interface UIFactoryPaginated : UIFactory {
         val ui = getPaginatedUI(bPlayer)
         BukkitPlugin.plugin.debug("UI ${this::class.simpleName} size: ${ui.size}")
         BukkitPlugin.plugin.debug("UI ${this::class.simpleName} firstPage exist: ${ui.firstOrNull() != null}")
+        debugDetails()
         return ui.firstOrNull()
     }
 
@@ -51,7 +52,7 @@ interface UIFactoryPaginated : UIFactory {
         invs.replaceAll { inv ->
             inv.contents = inv.asSequence().filterNotNull()
                     .filter { it.type != Material.AIR }
-                    .filter { customFilter(guild, it) }
+                    .filter { customFilter(guild, it).also { b -> BukkitPlugin.plugin.debug("$it customFilter not remove: $b") } }
                     .filter { !it.unmovable }
                     .distinctBy { it.itemMeta?.displayName ?: it }.toList().toTypedArray()
             inv.setItem(6 row 1, previous)
@@ -66,6 +67,11 @@ interface UIFactoryPaginated : UIFactory {
 
     val ItemStack.unmovable: Boolean
         get() = NBTItem(this).getBoolean("unmovable")
+
+
+    override fun debugDetails() {
+        BukkitPlugin.plugin.debug("total details: ${paginatedCaches.map { (g, l) -> "${g.name} => ${l.map { i -> i.contents.map { it?.toString() ?: "null" } }}" }}")
+    }
 
     fun customFilter(guild: Guild, item: ItemStack): Boolean = true
 

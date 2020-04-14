@@ -102,13 +102,16 @@ object GuildManager {
         val shopItem = shopItems?.items?.filterKeys { it == id }?.map { it.value }?.singleOrNull()
                 ?: return ShopResponse.NO_PRODUCT to null
         val price = shopItem.price
-        return if (gPlayer.contribution >= price) {
+        return if (gPlayer consume price) {
             if (player.inventory.addItem(shopItem.item).isEmpty()) {
-                gPlayer.contribution -= price
                 shopItems.items.remove(id)
-                ShopResponse.BUY_SUCCESS
+                ShopResponse.BUY_SUCCESS to shopItem
+            } else {
+                ShopResponse.INVENTORY_FULL to shopItem
+            }.also {
+                LegendGuild.guildShopController.save { shopItems }
+                LegendGuild.guildPlayerController.save { gPlayer }
             }
-            ShopResponse.INVENTORY_FULL to shopItem
         } else {
             ShopResponse.NOT_ENOUGH_CONTRIBUTE to shopItem
         }
@@ -120,12 +123,15 @@ object GuildManager {
         if (!p.canGetSalary) return SalaryResponse.ALREADY_GET_TODAY
         else {
             val salary = LegendGuild.config.salaries[p.role] ?: return SalaryResponse.ROLE_NO_SALARIES
+            BukkitPlugin.plugin.debug("getting salary for ${player.name}: $$salary")
             return if (LegendGuild.economy.depositPlayer(player, salary).transactionSuccess()) {
                 g.resource.money -= salary
+                BukkitPlugin.plugin.debug("now guild have money: $${g.resource.money}")
+                p.setLastSalary()
                 if (g.resource.money < 0) SalaryResponse.SUCCESS_NEGATIVE else SalaryResponse.SUCCESS
             } else {
                 SalaryResponse.FAILED
-            }
+            }.also { LegendGuild.guildController.save { g } }
         }
     }
 

@@ -39,6 +39,7 @@ object SalaryUI : UIFactory {
                 }
                 g.salaries[role] = salary
                 it.player.tellSuccess()
+                LegendGuild.guildController.save { g }
             }
         }
     }
@@ -52,7 +53,7 @@ object SalaryUI : UIFactory {
             UIManager.p.createGUI(
                     rows = 1, title = "&e薪資設定"
             ) {
-                (GuildPlayer.Role.values().dropLast(1) zip (0..8 step 2)).map {
+                (GuildPlayer.Role.values().drop(1) zip (0..8 step 2)).map {
                     val item = UIManager.p.itemStack(Material.EMERALD_BLOCK,
                             display = ChatColor.YELLOW.toString() + it.first.ch,
                             lore = listOf(
@@ -73,7 +74,7 @@ object SalaryUI : UIFactory {
     }
 
     override fun updateGInfo(guild: Guild, inventory: Inventory) {
-        val roleMap = GuildPlayer.Role.values() zip (0..8 step 2)
+        val roleMap = GuildPlayer.Role.values().drop(1) zip (0..8 step 2)
         BukkitPlugin.plugin.debug("updating ${this::class} info for ${guild.name}")
         roleMap.forEach { (role, slot) ->
             val salary = guild.salaries[role] ?: return@forEach

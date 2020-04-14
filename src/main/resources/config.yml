@@ -13,11 +13,11 @@ dailyContribution:
   money:
     need: 1000.0
     exp: 10.0
-    contrubute: 100
+    contribute: 100
   points:
     need: 100.0
     exp: 20.0
-    contrubute: 200
+    contribute: 200
 
 postResources:
   money: 1000.0

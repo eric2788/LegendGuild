@@ -2,6 +2,7 @@ package com.ericlam.mc.legendguild
 
 import com.ericlam.mc.kotlib.bukkit.BukkitPlugin
 import com.ericlam.mc.kotlib.catch
+import com.ericlam.mc.kotlib.msgFormat
 import com.ericlam.mc.kotlib.not
 import com.ericlam.mc.kotlib.translateColorCode
 import com.ericlam.mc.legendguild.dao.Guild
@@ -18,11 +19,13 @@ import com.mojang.authlib.properties.Property
 import de.tr7zw.nbtapi.NBTItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.async
 import kotlinx.coroutines.withContext
 import net.md_5.bungee.api.ChatColor
 import net.md_5.bungee.api.chat.ClickEvent
 import net.md_5.bungee.api.chat.ComponentBuilder
+import net.md_5.bungee.api.chat.HoverEvent
+import net.md_5.bungee.api.chat.TextComponent
 import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.OfflinePlayer
@@ -37,21 +40,40 @@ import org.bukkit.permissions.PermissionAttachment
 import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
-import java.text.MessageFormat
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.collections.List
+import kotlin.collections.Map
+import kotlin.collections.MutableList
+import kotlin.collections.MutableMap
+import kotlin.collections.MutableSet
+import kotlin.collections.emptyList
+import kotlin.collections.filter
+import kotlin.collections.find
+import kotlin.collections.flatMap
+import kotlin.collections.forEach
+import kotlin.collections.get
+import kotlin.collections.listOf
+import kotlin.collections.map
+import kotlin.collections.mapNotNull
+import kotlin.collections.mutableSetOf
+import kotlin.collections.plus
+import kotlin.collections.remove
+import kotlin.collections.set
 
 fun OfflinePlayer.leaveGuild(): Boolean {
     val gp = this.guildPlayer ?: return false
     return if (gp.role != GuildPlayer.Role.POPE) {
-        LegendGuild.guildPlayerController.delete(this.uniqueId)
         UIManager.clearCache(this)
+        LegendGuild.guildPlayerController.delete(this.uniqueId)
+        player?.closeInventory()
         true
     } else {
         val list = LegendGuild.guildPlayerController.find { guild == name }.mapNotNull { Bukkit.getOfflinePlayer(it.uuid) }
+        list.forEach { UIManager.clearCache(it) }
         return if (LegendGuild.guildController.delete(gp.guild)) {
             list.forEach {
-                UIManager.clearCache(it)
+                it.player?.closeInventory()
                 it.notify(Lang["guild-deleted"])
             }
             true
@@ -141,8 +163,8 @@ fun ItemMeta.toSkullMeta(skin: String): ItemMeta {
     return this
 }
 
-fun String.format(vararg o: Any): String {
-    return MessageFormat.format(this, *o)
+fun String.format(vararg o: Any?): String {
+    return this.msgFormat(*o)
 }
 
 val QuestPlayer.QuestResult.path: String
@@ -221,21 +243,37 @@ fun Player.addItem(stack: ItemStack, price: Int) {
         return
     }
     val id = UUID.randomUUID()
+    val shopItem = GuildShopItems.ShopItem(price, stack, uniqueId)
     LegendGuild.guildShopController.update(guild.name) {
-        items[id] = GuildShopItems.ShopItem(price, stack, uniqueId)
+        items[id] = shopItem
     }
-    val nbtItem = NBTItem(stack.clone())
+    val nbtItem = shopItem.toShopItem(player.uniqueId, id)
+    BukkitPlugin.plugin.debug("prepare to add item into ShopUI: $nbtItem")
+    ShopUI.addProduct(this, nbtItem.item)
+    this.tellSuccess()
+    player.inventory.itemInMainHand = null
+}
+
+fun GuildShopItems.ShopItem.toShopItem(uniqueId: UUID, id: UUID): NBTItem {
+    val nbtItem = NBTItem(this.item.clone())
+    val name = Bukkit.getOfflinePlayer(uniqueId)?.name ?: "UNKNOWN USER"
     nbtItem.setString("guild.shop", id.toString())
-    nbtItem.setString("guild.shop.seller", this.uniqueId.toString())
+    nbtItem.setString("guild.shop.seller", uniqueId.toString())
+    val desp = listOf(
+            "&7==========================",
+            "&e擁有人: &f$name",
+            "&e價格: &f$price 貢獻值"
+    ).map { it.translateColorCode() }
     BukkitPlugin.plugin.debug("$name uploaded an item $id with price $price")
     val item = nbtItem.item
-    item.lore = (item.lore ?: listOf()) + listOf(
-            "&7==========================",
-            "&e擁有人: &f$displayName",
-            "&e價格: &f$price 貢獻值"
-    )
-    ShopUI.addProduct(this, item)
-    this.tellSuccess()
+    item.itemMeta?.run {
+        this.lore = (item.lore ?: emptyList()) + desp
+        item.itemMeta = this
+    } ?: kotlin.run {
+        val display = nbtItem.getCompound("display")
+        display.setString("Lore", desp.toString())
+    }
+    return nbtItem
 }
 
 fun Player.removeItem(stack: ItemStack): Boolean {
@@ -251,7 +289,13 @@ fun Player.removeItem(stack: ItemStack): Boolean {
             ?: throw IllegalStateException("cannot find ui for ${guild.name}")
     val inv = inventories.find { inv -> inv.contains(stack) } ?: return false
     inv.remove(stack)
-    return true
+    val id = NBTItem(stack).getString("guild.shop")?.let { UUID.fromString(it) }
+    return LegendGuild.guildShopController.update(guild.name) {
+        this.items.remove(id)
+    }?.let {
+        inventory.addItem(stack)
+        true
+    } ?: false
 }
 
 val OfflinePlayer.joinerSkull: ItemStack
@@ -294,9 +338,9 @@ fun Player.tellInvite() {
     BukkitPlugin.plugin.debug("tell invite to $name")
     GuildManager.guildMap.filter { g -> g.invites.contains(this.uniqueId) }.forEach { g ->
         this.sendMessage(Lang["invited"].format(g.name))
-        val yes = ComponentBuilder("答應請求").color(ChatColor.GREEN).underlined(true).event(ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/guild response accept ${g.name}"))
-        val no = ComponentBuilder("拒絕請求").color(ChatColor.RED).underlined(true).event(ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/guild response decline ${g.name}"))
-        val text = ComponentBuilder("[").color(ChatColor.GRAY).append(yes.create()).append("|").append(no.create()).append("]").create()
+        val yes = ComponentBuilder("答應請求").color(ChatColor.GREEN).underlined(true).event(ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/guild response accept ${g.name}")).event(HoverEvent(HoverEvent.Action.SHOW_TEXT, TextComponent.fromLegacyText("點擊以選擇")))
+        val no = ComponentBuilder("拒絕請求").color(ChatColor.RED).underlined(true).event(ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/guild response decline ${g.name}")).event(HoverEvent(HoverEvent.Action.SHOW_TEXT, TextComponent.fromLegacyText("點擊以選擇")))
+        val text = ComponentBuilder("[").color(ChatColor.GRAY).append(yes.create()).color(ChatColor.GRAY).append("|").append(no.create()).color(ChatColor.GRAY).append("]").create()
         this.spigot().sendMessage(*text)
         BukkitPlugin.plugin.debug("tell invite to $name for joining guild ${g.name}")
     }
@@ -312,20 +356,24 @@ fun OfflinePlayer.joinGuild(gName: String) {
         BukkitPlugin.plugin.debug("${this.name} already has guild, so skipped")
         return
     }
-    GlobalScope.launch {
+    GlobalScope.async {
         val skin = toSkinValue()
         con.save { GuildPlayer(uniqueId, name, gName, skin) }
     }.invokeOnCompletion {
         it?.printStackTrace()?.also {
             BukkitPlugin.plugin.debug("error appeared, so failed")
-            player.tellFailed()
+            player?.tellFailed()
         }
-                ?: player.tellSuccess().also {
+                ?: player?.tellSuccess().also {
                     BukkitPlugin.plugin.debug("successfully save $name to guild $gName")
+                    LegendGuild.guildController.update(gName) {
+                        wannaJoins.remove(uniqueId)
+                    }
                     val off = this
                     UIManager.p.schedule { // run in main thread
-                        BukkitPlugin.plugin.debug("preparing to add ${player.name} in PromoteUI")
+                        BukkitPlugin.plugin.debug("preparing to add $name in PromoteUI")
                         PromoteUI.addPlayer(off)
+                        player?.closeInventory()
                         off.player?.refreshPermissions(LegendGuild.attachment(off.player))
                     }
                 }

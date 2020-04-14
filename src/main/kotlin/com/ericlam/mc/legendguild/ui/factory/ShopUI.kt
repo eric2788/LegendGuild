@@ -31,8 +31,8 @@ object ShopUI : UIFactoryPaginated {
             val queue = ConcurrentLinkedDeque(shop.items.entries)
             while (queue.isNotEmpty()) {
                 val gPlayer = queue.poll()
-                val shopItem = gPlayer.value.item
-                currentInv.addItem(shopItem)
+                val shopItem = gPlayer.value.toShopItem(gPlayer.value.owner, gPlayer.key)
+                currentInv.addItem(shopItem.item)
                 if (currentInv.firstEmpty() == -1) {
                     currentInv = createPage()
                     inventories.add(currentInv)
@@ -65,6 +65,7 @@ object ShopUI : UIFactoryPaginated {
     override val paginatedCaches: MutableMap<Guild, MutableList<Inventory>> = ConcurrentHashMap()
 
     override fun createPage(): Inventory {
+        BukkitPlugin.plugin.debug("Creating new page of ${this::class.simpleName}")
         return UIManager.p.createGUI(
                 rows = 6, title = "&a商店列表",
                 fills = mapOf(
@@ -85,6 +86,7 @@ object ShopUI : UIFactoryPaginated {
                                     }?.let { it.items[id] }
                                     shop?.owner?.let { Bukkit.getOfflinePlayer(it) }?.notify(Lang.Shop["product-removed"])
                                     player.tellSuccess()
+                                    clickedInventory?.remove(stack)
                                 }
                                 "shop.check" -> isCancelled = true
                                 else -> {

@@ -24,48 +24,55 @@ object PromoteUI : UIFactoryPaginated {
 
     override val paginatedCaches: MutableMap<Guild, MutableList<Inventory>> = ConcurrentHashMap()
     override val pageCache: MutableMap<OfflinePlayer, ListIterator<Inventory>> = ConcurrentHashMap()
-    private val roleSetter: MutableMap<Player, GuildPlayer> = ConcurrentHashMap()
+    private val roleSetter: MutableMap<Player, OfflinePlayer> = ConcurrentHashMap()
 
 
     override fun customFilter(guild: Guild, item: ItemStack): Boolean {
-        return guild.members.map { it.name }.contains(NBTItem(item).getString("guild.head.owner"))
+        return guild.members.map { it.uuid.toString() }.contains(NBTItem(item).getString("guild.head.owner"))
     }
 
     init {
         UIManager.p.listen<AsyncPlayerChatEvent> {
-            roleSetter.remove(it.player)?.also { gplayer ->
+            roleSetter.remove(it.player)?.also { p ->
                 catch<IllegalArgumentException>({ _ ->
                     it.player.sendMessage()
                 }) {
+                    it.isCancelled = true
                     val newRole = GuildPlayer.Role.fromName(it.message)
                             ?: GuildPlayer.Role.values().find { r -> r.name.equals(it.message, ignoreCase = true) }
                             ?: let { _ ->
                                 it.player.sendMessage(Lang["no-role"].format(it.message))
                                 return@also
                             }
-                    gplayer.role = newRole
-                    gplayer.player.player?.refreshPermissions(LegendGuild.attachment(gplayer.player.player))
-                    gplayer.player.player?.closeInventory()
-                    UIManager.clearCache(gplayer.player)
-                    it.player.tellSuccess()
+
+                    LegendGuild.guildPlayerController.update(p.uniqueId) {
+                        this.role = newRole
+                    }
+                    UIManager.p.schedule {
+                        p.player?.refreshPermissions(LegendGuild.attachment(p.player))
+                        p.player?.closeInventory()
+                        UIManager.clearCache(p)
+                        it.player.tellSuccess()
+                    }
                 }
             }
         }
     }
 
     override fun createPage(): Inventory {
+        BukkitPlugin.plugin.debug("Creating new page of ${this::class.simpleName}")
         return UIManager.p.createGUI(
                 rows = 6, title = "&a晉升成員",
                 fills = mapOf(
                         0..53 to Clicker(UIManager.p.itemStack(Material.AIR)) { player, stack ->
                             val uuid = NBTItem(stack).getString("guild.head.owner") ?: return@Clicker
-                            val gPlayer = UUID.fromString(uuid)?.let { Bukkit.getOfflinePlayer(it).guildPlayer }
+                            val offlinePlayer = UUID.fromString(uuid)?.let { Bukkit.getOfflinePlayer(it) }
                                     ?: let {
                                         player.sendMessage(Lang["player-not-found"])
                                         return@Clicker
                                     }
                             player.closeInventory()
-                            roleSetter[player] = gPlayer
+                            roleSetter[player] = offlinePlayer
                             player.sendMessage(Lang.Setter["role"])
                         },
                         (6 row 2)..(6 row 8) to Clicker(UIFactoryPaginated.decorate)
@@ -131,6 +138,7 @@ object PromoteUI : UIFactoryPaginated {
             return
         }
         val inventories = paginatedCaches[g] ?: let {
+            BukkitPlugin.plugin.debug("empty inventory list, creating new one")
             val i = getPaginatedUI(player)
             if (i.isNotEmpty()) return addPlayer(player)
             else {
@@ -157,5 +165,7 @@ object PromoteUI : UIFactoryPaginated {
         }
         BukkitPlugin.plugin.debug("adding skull item to promoteUI: $skull")
         inv.addItem(skull)
+        BukkitPlugin.plugin.debug("inv item details: ${inv.map { it?.toString() ?: "null" }}")
+        debugDetails()
     }
 }

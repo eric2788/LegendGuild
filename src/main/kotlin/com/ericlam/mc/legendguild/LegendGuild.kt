@@ -131,7 +131,7 @@ class LegendGuild : BukkitPlugin() {
             val killer = (it.entity.lastDamageCause as? EntityDamageByEntityEvent)?.damager?.playerKiller
                     ?: return@listen
             questPlayerController.update(killer.uniqueId) {
-                item?.killed?.add(victim)
+                item?.killed?.add(victim.type)
             }
         }
     }

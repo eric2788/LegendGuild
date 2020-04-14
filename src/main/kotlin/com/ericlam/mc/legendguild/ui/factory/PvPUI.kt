@@ -125,6 +125,7 @@ object PvPUI : UIFactoryPaginated {
     override val pageCache: MutableMap<OfflinePlayer, ListIterator<Inventory>> = mutableMapOf()
 
     override fun createPage(): Inventory {
+        BukkitPlugin.plugin.debug("Creating new page of ${this::class.simpleName}")
         return UIManager.p.createGUI(6, "&b宗門戰爭",
                 fills = mapOf(
                         (6 row 2)..(6 row 8) to Clicker(ItemStack(Material.AIR)) { p, stack ->

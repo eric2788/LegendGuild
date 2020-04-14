@@ -32,7 +32,7 @@ object GuildCommand : BukkitCommand(
                         name = "check",
                         description = "查看申請列表",
                         permission = "guild.pass"
-                ) { commandSender, strings ->
+                ) { commandSender, _ ->
                     val player = commandSender.toPlayer ?: return@BukkitCommand
                     UIManager.openUI(player, JoinerUI)
                 },
@@ -93,8 +93,7 @@ object GuildCommand : BukkitCommand(
                         player.sendMessage(Lang["joined-guild"].format(target.name))
                         return@BukkitCommand
                     }
-                    guild.invites.add(target.uniqueId)
-                    target.player?.tellInvite()
+                    if (guild.invites.add(target.uniqueId)) target.player?.tellInvite()
                     player.tellSuccess()
                 },
                 BukkitCommand(
@@ -129,6 +128,7 @@ object GuildCommand : BukkitCommand(
                         return@BukkitCommand
                     }
                     player.sendMessage(Lang[if (target.leaveGuild()) "success" else "failed"])
+                    target.notify(Lang["kicked"])
                 },
                 BukkitCommand(
                         name = "leave",
@@ -186,8 +186,14 @@ object GuildCommand : BukkitCommand(
                                         sender.sendMessage(Lang["not-number"].format(args[1]))
                                         return@BukkitCommand
                                     }
-                                    val item = player.inventory.itemInMainHand
-                                    val nbt = NBTItem(item)
+                                    val hand = player.inventory.itemInMainHand
+                                    fun find(item: ItemStack?): Boolean = item?.let { stack -> NBTItem(stack).getString("guild.sell.name") == args[0] }
+                                            ?: false
+                                    if (ShopUI.getPaginatedUI(player).any { inv -> inv.any(::find) }) {
+                                        sender.sendMessage(Lang.Shop["same-name"])
+                                        return@BukkitCommand
+                                    }
+                                    val nbt = NBTItem(hand)
                                     nbt.setString("guild.sell.name", args[0])
                                     player.addItem(nbt.item, price)
                                 },
@@ -199,7 +205,8 @@ object GuildCommand : BukkitCommand(
                                 ) { sender, args ->
                                     val player = sender.toPlayer ?: return@BukkitCommand
                                     val name = args[0]
-                                    fun find(item: ItemStack): Boolean = NBTItem(item).getString("guild.sell.name") == name
+                                    fun find(item: ItemStack?): Boolean = item?.let { stack -> NBTItem(stack).getString("guild.sell.name") == name }
+                                            ?: false
                                     val item = ShopUI.getPaginatedUI(player).find { inv -> inv.any(::find) }?.find(::find)
                                             ?: run {
                                                 BukkitPlugin.plugin.debug("cannot find item $name")
@@ -215,6 +222,43 @@ object GuildCommand : BukkitCommand(
                                         if (player.removeItem(item)) player.tellSuccess() else player.tellFailed()
                                     } else {
                                         player.sendMessage(Lang.Shop["not-owner"])
+                                    }
+                                }
+                        )
+                ),
+                BukkitCommand(
+                        name = "item",
+                        description = "物品管理",
+                        child = arrayOf(
+                                BukkitCommand(
+                                        name = "upload",
+                                        description = "上傳物品",
+                                        placeholders = arrayOf("name")
+                                ) { sender, args ->
+                                    val player = sender.toPlayer ?: return@BukkitCommand
+                                    val name = args[0]
+                                    val itemC = LegendGuild.item
+                                    if (itemC.items.containsKey(name)) {
+                                        player.sendMessage(Lang.Shop["same-name"])
+                                        return@BukkitCommand
+                                    }
+                                    itemC.items[name] = player.inventory.itemInMainHand
+                                    itemC.save()
+                                    player.tellSuccess()
+                                },
+                                BukkitCommand(
+                                        name = "remove",
+                                        description = "刪除物品",
+                                        placeholders = arrayOf("name")
+                                ) { sender, args ->
+                                    val player = sender.toPlayer ?: return@BukkitCommand
+                                    val name = args[0]
+                                    val itemC = LegendGuild.item
+                                    itemC.items.remove(name)?.also {
+                                        itemC.save()
+                                        player.tellSuccess()
+                                    } ?: run {
+                                        player.sendMessage(Lang.Shop["unknown-item"])
                                     }
                                 }
                         )

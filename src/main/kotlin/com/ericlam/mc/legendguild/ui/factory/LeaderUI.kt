@@ -52,6 +52,7 @@ object LeaderUI : UIFactoryPaginated {
     override val pageCache: MutableMap<OfflinePlayer, ListIterator<Inventory>> = ConcurrentHashMap()
 
     override fun createPage(): Inventory {
+        BukkitPlugin.plugin.debug("Creating new page of ${this::class.simpleName}")
         return UIManager.p.createGUI(6, "&b宗門排行榜",
                 fills = mapOf((6 row 2)..(6 row 8) to Clicker(UIFactoryPaginated.decorate))
         ) {

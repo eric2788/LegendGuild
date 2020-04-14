@@ -4,7 +4,6 @@ import com.ericlam.mc.kotlib.config.dao.DataFile
 import com.ericlam.mc.kotlib.config.dao.DataResource
 import com.ericlam.mc.kotlib.config.dao.ForeignKey
 import com.ericlam.mc.kotlib.config.dao.PrimaryKey
-import com.ericlam.mc.legendguild.LegendGuild
 import com.ericlam.mc.legendguild.steveSkin
 import org.bukkit.Bukkit
 import org.bukkit.OfflinePlayer
@@ -46,7 +45,7 @@ data class GuildPlayer(
     }
 
     val canGetSalary: Boolean
-        get() = Duration.between(Timestamp(last_salary).toLocalDateTime(), LocalDateTime.now()).toDays() > 0 && LegendGuild.config.salaries.containsKey(role)
+        get() = Duration.between(Timestamp(last_salary).toLocalDateTime(), LocalDateTime.now()).toDays() > 0
 
     fun setLastSalary() {
         this.last_salary = System.currentTimeMillis()

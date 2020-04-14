@@ -4,9 +4,8 @@ import com.ericlam.mc.kotlib.Clicker
 import com.ericlam.mc.legendguild.LegendGuild
 import com.ericlam.mc.legendguild.tellSuccess
 import com.ericlam.mc.legendguild.ui.UIManager
-import com.ericlam.mc.legendguild.ui.factory.QuestUI
 import org.bukkit.Material
-import org.bukkit.entity.Entity
+import org.bukkit.entity.EntityType
 import org.bukkit.entity.Monster
 import org.bukkit.inventory.ItemStack
 
@@ -14,29 +13,29 @@ enum class QuestType(val exp: Double,
                      val contribution: Int,
                      val item: () -> ItemStack) {
     EASY(10.0, 100, { Item.easy }) {
-        override fun progress(killed: List<Entity>): Pair<Int, Int> {
-            return killed.filterIsInstance<Monster>().size to 100
+        override fun progress(killed: List<EntityType>): Pair<Int, Int> {
+            return killed.filter { e -> Monster::class.java.isAssignableFrom(e.entityClass) }.size to 100
         }
     },
     NORMAL(30.0, 300, { Item.normal }) {
-        override fun progress(killed: List<Entity>): Pair<Int, Int> {
-            return killed.filterIsInstance<Monster>().size to 500
+        override fun progress(killed: List<EntityType>): Pair<Int, Int> {
+            return killed.filter { e -> Monster::class.java.isAssignableFrom(e.entityClass) }.size to 500
         }
     },
     HARD(60.0, 600, { Item.hard }) {
-        override fun progress(killed: List<Entity>): Pair<Int, Int> {
-            return killed.filterIsInstance<Monster>().size to 1000
+        override fun progress(killed: List<EntityType>): Pair<Int, Int> {
+            return killed.filter { e -> Monster::class.java.isAssignableFrom(e.entityClass) }.size to 1000
         }
     },
     NIGHTMARE(120.0, 1200, { Item.nightmare }) {
-        override fun progress(killed: List<Entity>): Pair<Int, Int> {
-            return killed.filterIsInstance<Monster>().size to 1500
+        override fun progress(killed: List<EntityType>): Pair<Int, Int> {
+            return killed.filter { e -> Monster::class.java.isAssignableFrom(e.entityClass) }.size to 1500
         }
     };
 
-    open fun goal(killed: List<Entity>): Boolean = progress(killed).first >= progress(killed).second
+    open fun goal(killed: List<EntityType>): Boolean = (progress(killed).first >= progress(killed).second)
 
-    abstract fun progress(killed: List<Entity>): Pair<Int, Int>
+    abstract fun progress(killed: List<EntityType>): Pair<Int, Int>
 
     val material: Material
         get() = LegendGuild.config.questItems[this] ?: Material.STONE
@@ -45,10 +44,10 @@ enum class QuestType(val exp: Double,
         Clicker(item()) { player, _ ->
             LegendGuild.questPlayerController.save {
                 QuestPlayer(player.uniqueId, QuestPlayer.QuestItem(this@QuestType))
+            }.also {
+                player.tellSuccess()
+                player.closeInventory()
             }
-            player.tellSuccess()
-            player.closeInventory()
-            UIManager.openUI(player, QuestUI)
         }
     }
 

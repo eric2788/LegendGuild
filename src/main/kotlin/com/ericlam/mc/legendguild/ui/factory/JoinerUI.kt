@@ -23,10 +23,11 @@ object JoinerUI : UIFactoryPaginated {
     override val pageCache: MutableMap<OfflinePlayer, ListIterator<Inventory>> = ConcurrentHashMap()
 
     override fun customFilter(guild: Guild, item: ItemStack): Boolean {
-        return !guild.members.map { m -> m.name }.contains(NBTItem(item).getString("guild.head.owner"))
+        return !guild.members.map { m -> m.uuid.toString() }.contains(NBTItem(item).getString("guild.head.owner"))
     }
 
     override fun createPage(): Inventory {
+        BukkitPlugin.plugin.debug("Creating new page of ${this::class.simpleName}")
         return UIManager.p.createGUI(
                 rows = 6, title = "&a申請者列表",
                 fills = mapOf(
@@ -51,7 +52,9 @@ object JoinerUI : UIFactoryPaginated {
                                     }
                                     val offline = Bukkit.getOfflinePlayer(uuid)
                                     BukkitPlugin.plugin.debug("the accept of ${player.name} is left click")
-                                    offline.joinGuild(guild.name)
+                                    offline.joinGuild(guild.name).also {
+                                        offline.notify(Lang["joined-success"])
+                                    }
                                 }
                                 isRightClick -> {
                                     BukkitPlugin.plugin.debug("the accept of ${player.name} is right click")
@@ -93,8 +96,12 @@ object JoinerUI : UIFactoryPaginated {
         val inventories = paginatedCaches.keys.find { g -> g.wannaJoins.contains(player.uniqueId) }?.let { paginatedCaches[it] }
                 ?: let {
                     BukkitPlugin.plugin.debug("joiner: cannot find any guild inventories, use getPaginatedUI method")
-                    getPaginatedUI(player)
-                    return
+                    val i = getPaginatedUI(player)
+                    if (i.isNotEmpty()) return addPlayer(player)
+                    else {
+                        BukkitPlugin.plugin.debug("joiner inventory for ${player.name} is empty")
+                        return
+                    }
                 }
         var inv = inventories.lastOrNull() ?: let {
             BukkitPlugin.plugin.debug("joiner inventories is empty")

@@ -55,6 +55,7 @@ object JoinUI : UIFactoryPaginated {
     override val pageCache: MutableMap<OfflinePlayer, ListIterator<Inventory>> = mutableMapOf()
 
     override fun createPage(): Inventory {
+        BukkitPlugin.plugin.debug("Creating new page of ${this::class.simpleName}")
         return UIManager.p.createGUI(
                 rows = 6, title = "&a宗門列表一覽 (三分鐘更新一次)",
                 fills = mapOf(

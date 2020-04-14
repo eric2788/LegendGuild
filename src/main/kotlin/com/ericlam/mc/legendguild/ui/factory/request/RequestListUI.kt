@@ -65,10 +65,11 @@ object RequestListUI : UIFactoryPaginated {
     }
 
     override fun customFilter(guild: Guild, item: ItemStack): Boolean {
-        return guild.members.map { it.name }.contains(NBTItem(item).getString("guild.head.owner"))
+        return guild.members.map { it.uuid.toString() }.contains(NBTItem(item).getString("guild.head.owner"))
     }
 
     override fun createPage(): Inventory {
+        BukkitPlugin.plugin.debug("Creating new page of ${this::class.simpleName}")
         return UIManager.p.createGUI(
                 rows = 6,
                 title = "委託列表一覽",
