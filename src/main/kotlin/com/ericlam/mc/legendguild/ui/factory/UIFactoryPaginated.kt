@@ -1,7 +1,9 @@
 package com.ericlam.mc.legendguild.ui.factory
 
+import com.ericlam.mc.kotlib.Clicker
 import com.ericlam.mc.kotlib.bukkit.BukkitPlugin
 import com.ericlam.mc.kotlib.row
+import com.ericlam.mc.legendguild.Lang
 import com.ericlam.mc.legendguild.dao.Guild
 import com.ericlam.mc.legendguild.materialGlassPane
 import com.ericlam.mc.legendguild.materialHead
@@ -29,7 +31,13 @@ interface UIFactoryPaginated : UIFactory {
     }
 
     fun getIterator(bPlayer: OfflinePlayer): ListIterator<Inventory> {
-        return pageCache[bPlayer] ?: getPaginatedUI(bPlayer).toList().listIterator().also { pageCache[bPlayer] = it }
+        return pageCache[bPlayer] ?: getPaginatedUI(bPlayer).toList().let {
+            BukkitPlugin.plugin.debug("iterator current size: ${it.size}")
+            it.listIterator().also { iter ->
+                iter.next()
+                pageCache[bPlayer] = iter
+            }
+        }
     }
 
     fun createPage(): Inventory
@@ -50,11 +58,11 @@ interface UIFactoryPaginated : UIFactory {
             inv2
         }
         invs.replaceAll { inv ->
-            inv.contents = inv.asSequence().filterNotNull()
+            inv.contents = inv.contents.filterNotNull()
                     .filter { it.type != Material.AIR }
                     .filter { customFilter(guild, it).also { b -> BukkitPlugin.plugin.debug("$it customFilter not remove: $b") } }
                     .filter { !it.unmovable }
-                    .distinctBy { it.itemMeta?.displayName ?: it }.toList().toTypedArray()
+                    .toList().toTypedArray()
             inv.setItem(6 row 1, previous)
             inv.setItem(6 row 9, next)
             for (i in (6 row 2)..(6 row 8)) {
@@ -74,6 +82,29 @@ interface UIFactoryPaginated : UIFactory {
     }
 
     fun customFilter(guild: Guild, item: ItemStack): Boolean = true
+
+    val pageOperator: Map<Int, Clicker>
+        get() = mapOf(
+                6 row 1 to Clicker(previous) { player, _ ->
+                    val iterator = getIterator(player)
+                    if (iterator.hasPrevious() && iterator.previousIndex() > 0) {
+                        BukkitPlugin.plugin.debug("jumped to previous page")
+                        UIManager.openUI(player, iterator.previous())
+                    } else {
+                        player.sendMessage(Lang.Page["no-previous"])
+                    }
+                },
+                6 row 9 to Clicker(next) { player, _ ->
+                    val iterator = getIterator(player)
+                    if (iterator.hasNext()) {
+                        BukkitPlugin.plugin.debug("jumped to next page")
+                        UIManager.openUI(player, iterator.next())
+                    } else {
+                        player.sendMessage(Lang.Page["no-next"])
+                    }
+                }
+        )
+
 
     companion object Utils {
         val previous = UIManager.p.itemStack(materialHead, display = "&e上一頁").apply {

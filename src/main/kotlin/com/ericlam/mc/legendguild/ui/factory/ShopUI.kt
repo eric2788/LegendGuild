@@ -6,7 +6,6 @@ import com.ericlam.mc.kotlib.row
 import com.ericlam.mc.legendguild.*
 import com.ericlam.mc.legendguild.dao.Guild
 import com.ericlam.mc.legendguild.ui.UIManager
-import de.tr7zw.nbtapi.NBTEntity
 import de.tr7zw.nbtapi.NBTItem
 import org.bukkit.Bukkit
 import org.bukkit.Material
@@ -19,10 +18,17 @@ import java.util.concurrent.ConcurrentLinkedDeque
 
 object ShopUI : UIFactoryPaginated {
 
+    val adminOperate: MutableMap<UUID, Operation> = mutableMapOf()
+
+    enum class Operation {
+        BANK,
+        SET_BANK
+    }
+
     override fun getPaginatedUI(bPlayer: OfflinePlayer): List<Inventory> {
         val guild = bPlayer.guild ?: return emptyList()
-        val shop = LegendGuild.guildShopController.findById(guild.name) ?: return emptyList()
         return paginatedCaches[guild] ?: let {
+            val shop = LegendGuild.guildShopController.findById(guild.name) ?: return emptyList()
             BukkitPlugin.plugin.debug("initializing shop inventory list for ${guild.name}")
             BukkitPlugin.plugin.debug("shop current paginatedCaches details: ${paginatedCaches.map { "${it.key.name} => ${it.value.flatMap { i -> i.contents.toList() }.map { s -> s.toString() }}" }}")
             val inventories = mutableListOf<Inventory>()
@@ -48,15 +54,20 @@ object ShopUI : UIFactoryPaginated {
 
     fun addProduct(p: OfflinePlayer, item: ItemStack) {
         val inventories = paginatedCaches[p.guild] ?: let {
+            BukkitPlugin.plugin.debug("cannot find any shopUI pages, creating one")
             val i = getPaginatedUI(p)
-            if (i.isNotEmpty()) return addProduct(p, item)
-            else return
+            if (i.isNotEmpty()) {
+                BukkitPlugin.plugin.debug("create success, using recursive method")
+                addProduct(p, item)
+            }
+            return
         }
         var inv = inventories.lastOrNull() ?: throw IllegalStateException("shop ui inventory list is empty")
         if (inv.firstEmpty() == -1) {
             inv = createPage()
             inventories.add(inv)
         }
+        BukkitPlugin.plugin.debug("preparing to add item $item")
         inv.addItem(item)
     }
 
@@ -66,17 +77,22 @@ object ShopUI : UIFactoryPaginated {
 
     override fun createPage(): Inventory {
         BukkitPlugin.plugin.debug("Creating new page of ${this::class.simpleName}")
+        pageCache.clear()
+        BukkitPlugin.plugin.debug("${this::class.simpleName} new page, so clear pageCache")
         return UIManager.p.createGUI(
                 rows = 6, title = "&a商店列表",
                 fills = mapOf(
                         0..53 to Clicker(UIManager.p.itemStack(Material.AIR)) { player, stack ->
-                            val nbtPlayer = NBTEntity(player)
                             val id = NBTItem(stack).getString("guild.shop")?.let {
                                 BukkitPlugin.plugin.debug("clicked item $it, casting to UUID")
                                 UUID.fromString(it)
                             }
-                            when (nbtPlayer.getString("guild.admin.operate")) {
-                                "shop.set" -> {
+                            val operation = adminOperate[player.uniqueId]
+                            BukkitPlugin.plugin.debug("Player clicked operation: $operation")
+                            when (operation) {
+                                Operation.SET_BANK -> {
+                                    BukkitPlugin.plugin.debug("admin clicked ShopUI.")
+                                    BukkitPlugin.plugin.debug("admin operation: remove product")
                                     clickedInventory?.remove(stack)
                                     if (player.inventory.addItem(stack).isNotEmpty()) {
                                         player.world.dropItem(player.location, stack)
@@ -88,8 +104,13 @@ object ShopUI : UIFactoryPaginated {
                                     player.tellSuccess()
                                     clickedInventory?.remove(stack)
                                 }
-                                "shop.check" -> isCancelled = true
+                                Operation.BANK -> {
+                                    BukkitPlugin.plugin.debug("admin clicked ShopUI.")
+                                    BukkitPlugin.plugin.debug("admin operation: checking product")
+                                    isCancelled = true
+                                }
                                 else -> {
+                                    BukkitPlugin.plugin.debug("player clicked ShopUI.")
                                     val res = GuildManager.buyProduct(player, stack)
                                     player.sendMessage(res.first.message)
                                     if (res.first == GuildManager.ShopResponse.BUY_SUCCESS) {
@@ -99,29 +120,11 @@ object ShopUI : UIFactoryPaginated {
                                     return@Clicker
                                 }
                             }
-                            nbtPlayer.removeKey("guild.admin.operate")
                         },
                         (6 row 2)..(6 row 8) to Clicker(UIFactoryPaginated.decorate)
                 )
         ) {
-            mapOf(
-                    6 row 1 to Clicker(UIFactoryPaginated.previous) { player, _ ->
-                        val iterator = getIterator(player)
-                        if (iterator.hasPrevious()) {
-                            UIManager.openUI(player, iterator.previous())
-                        } else {
-                            player.sendMessage(Lang.Page["no-previous"])
-                        }
-                    },
-                    6 row 9 to Clicker(UIFactoryPaginated.next) { player, _ ->
-                        val iterator = getIterator(player)
-                        if (iterator.hasNext()) {
-                            UIManager.openUI(player, iterator.next())
-                        } else {
-                            player.sendMessage(Lang.Page["no-next"])
-                        }
-                    }
-            )
+            pageOperator
         }
     }
 

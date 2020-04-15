@@ -4,9 +4,12 @@ import com.ericlam.mc.kotlib.bukkit.BukkitPlugin
 import com.ericlam.mc.kotlib.command.BukkitCommand
 import com.ericlam.mc.legendguild.*
 import com.ericlam.mc.legendguild.dao.GuildPlayer
+import com.ericlam.mc.legendguild.dao.QuestPlayer
 import com.ericlam.mc.legendguild.ui.UIManager
 import com.ericlam.mc.legendguild.ui.factory.*
+import com.ericlam.mc.legendguild.ui.factory.request.RequestListUI
 import de.tr7zw.nbtapi.NBTItem
+import org.bukkit.Material
 import org.bukkit.inventory.ItemStack
 import java.util.*
 
@@ -138,6 +141,32 @@ object GuildCommand : BukkitCommand(
                     player.sendMessage(Lang[if (player.leaveGuild()) "success" else "not-in-guild"])
                 },
                 BukkitCommand(
+                        name = "request",
+                        description = "創建委託",
+                        placeholders = arrayOf("contribute", "goal")
+                ) { sender, args ->
+                    val player = sender.toPlayer ?: return@BukkitCommand
+                    val con = args[0].toIntOrNull() ?: run {
+                        player.sendMessage(Lang["not-number"].format(args[0]))
+                        return@BukkitCommand
+                    }
+                    val goal = args.drop(1).toList()
+                    if (player.guild == null) {
+                        player.sendMessage(Lang["not-in-guild"])
+                        return@BukkitCommand
+                    }
+                    val item = QuestPlayer.RequestItem(goal, con)
+                    LegendGuild.questPlayerController.findById(player.uniqueId)?.request?.run {
+                        player.sendMessage(Lang["request-exist"])
+                        return@BukkitCommand
+                    }
+                    val b = LegendGuild.questPlayerController.update(player.uniqueId) {
+                        this.request = item
+                    } == null
+                    if (b) LegendGuild.questPlayerController.save { QuestPlayer(player.uniqueId, request = item) }
+                    RequestListUI.addPlayer(player)
+                },
+                BukkitCommand(
                         name = "response",
                         description = "回應邀請",
                         child = arrayOf(
@@ -187,6 +216,10 @@ object GuildCommand : BukkitCommand(
                                         return@BukkitCommand
                                     }
                                     val hand = player.inventory.itemInMainHand
+                                    if (hand?.type ?: Material.AIR == Material.AIR) {
+                                        sender.sendMessage(Lang["invalid-item"])
+                                        return@BukkitCommand
+                                    }
                                     fun find(item: ItemStack?): Boolean = item?.let { stack -> NBTItem(stack).getString("guild.sell.name") == args[0] }
                                             ?: false
                                     if (ShopUI.getPaginatedUI(player).any { inv -> inv.any(::find) }) {

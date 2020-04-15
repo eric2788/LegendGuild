@@ -15,7 +15,7 @@ data class Guild(
         private var exp: Double = 0.0,
         private val skills: MutableMap<GuildSkill, Int> = GuildSkill.values().map { it to 0 }.toMap().toMutableMap(),
         var public: Boolean = true,
-        val salaries: MutableMap<GuildPlayer.Role, Double> = LegendGuild.config.default_salaries,
+        val salaries: MutableMap<GuildPlayer.Role, Double> = LegendGuild.config.default_salaries.toMutableMap(),
         val wannaJoins: MutableSet<UUID> = mutableSetOf(),
         val invites: MutableSet<UUID> = mutableSetOf(),
         val resource: Resource = Resource()
@@ -37,6 +37,9 @@ data class Guild(
 
     val currentExp: Double
         get() = exp
+
+    val currentSkills: Map<GuildSkill, Int>
+        get() = skills
 
     infix fun exp(exp: Double) {
         this.exp += exp

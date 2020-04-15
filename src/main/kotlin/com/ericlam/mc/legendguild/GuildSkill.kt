@@ -11,4 +11,5 @@ enum class GuildSkill(val ch: String) {
             return values().find { it.ch == ch || it.name == ch }
         }
     }
+
 }

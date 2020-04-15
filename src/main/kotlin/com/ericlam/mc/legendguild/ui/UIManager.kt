@@ -34,6 +34,7 @@ object UIManager {
         addUI(JobInfoUI)
         addUI(QuestUI)
         addUI(YourRequestUI)
+        addUI(SkillUI)
 
         p.schedule(period = 10) {
             cachesList.forEach { factory ->

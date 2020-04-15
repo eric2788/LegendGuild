@@ -30,7 +30,7 @@ data class QuestPlayer(
     data class RequestItem(
             val goal: List<String>,
             val contribute: Int,
-            val taken: UUID?
+            val taken: UUID? = null
     )
 
     data class JobItem(

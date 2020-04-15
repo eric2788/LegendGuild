@@ -99,6 +99,12 @@ object MainUI : UIFactory {
                 display = "&e公會招募狀態",
                 lore = listOf("&c僅限被邀請", "點擊設置")
         )
+
+        val upgradeSkill = p.itemStack(
+                material = Material.BOOK,
+                display = "&a技能升級",
+                lore = listOf("點擊打開")
+        )
     }
 
     override fun getUI(bPlayer: OfflinePlayer): Inventory? {
@@ -153,6 +159,9 @@ object MainUI : UIFactory {
                     if (player.role hasPower GuildPlayer.Role.CO_POPE) {
                         this += 5 row 3 to Clicker(Admin.salarySet) { p, _ ->
                             UIManager.openUI(p, SalaryUI)
+                        }
+                        this += 5 row 4 to Clicker(Admin.upgradeSkill) { p, _ ->
+                            UIManager.openUI(p, SkillUI)
                         }
                     }
                 }

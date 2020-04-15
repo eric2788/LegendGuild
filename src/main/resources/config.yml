@@ -9,6 +9,24 @@ materials:
   leash: LEASH
 leaderUpdate: 600
 
+skills:
+  AZURE_DRAGON:
+    money: 500.0
+    items:
+      pistil: 1
+  BLACK_TORTOISE:
+    money: 500.0
+    items:
+      pistil: 1
+  VERMILION_BIRD:
+    money: 500.0
+    items:
+      pistil: 1
+  WHITE_TIGER:
+    money: 500.0
+    items:
+      pistil: 1
+
 dailyContribution:
   money:
     need: 1000.0

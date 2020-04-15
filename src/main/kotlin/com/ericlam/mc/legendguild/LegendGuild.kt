@@ -12,6 +12,8 @@ import com.ericlam.mc.legendguild.dao.GuildController
 import com.ericlam.mc.legendguild.dao.GuildPlayerController
 import com.ericlam.mc.legendguild.dao.GuildShopItemController
 import com.ericlam.mc.legendguild.dao.QuestPlayerController
+import com.ericlam.mc.legendguild.ui.factory.ShopUI
+import com.ericlam.mc.legendguild.ui.factory.request.YourRequestUI
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import net.milkbowl.vault.economy.Economy
@@ -21,6 +23,7 @@ import org.bukkit.entity.Player
 import org.bukkit.event.entity.EntityDamageByEntityEvent
 import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.entity.EntityDeathEvent
+import org.bukkit.event.inventory.InventoryCloseEvent
 import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.permissions.PermissionAttachment
 import java.util.*
@@ -124,6 +127,12 @@ class LegendGuild : BukkitPlugin() {
             }
             queue[player.uniqueId]?.forEach { msg -> player.sendMessage(msg) }
             player.tellInvite()
+        }
+
+        listen<InventoryCloseEvent> {
+            plugin.debug("Remove admin operation for ${it.player.name}")
+            ShopUI.adminOperate.remove(it.player.uniqueId)
+            YourRequestUI.checkAdmin.remove(it.player.uniqueId)
         }
 
         listen<EntityDeathEvent> {

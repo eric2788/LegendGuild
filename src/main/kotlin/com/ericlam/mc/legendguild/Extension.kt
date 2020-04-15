@@ -42,23 +42,6 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
-import kotlin.collections.List
-import kotlin.collections.Map
-import kotlin.collections.MutableList
-import kotlin.collections.MutableMap
-import kotlin.collections.MutableSet
-import kotlin.collections.emptyList
-import kotlin.collections.filter
-import kotlin.collections.find
-import kotlin.collections.flatMap
-import kotlin.collections.forEach
-import kotlin.collections.get
-import kotlin.collections.listOf
-import kotlin.collections.map
-import kotlin.collections.mapNotNull
-import kotlin.collections.mutableSetOf
-import kotlin.collections.plus
-import kotlin.collections.remove
 import kotlin.collections.set
 
 fun OfflinePlayer.leaveGuild(): Boolean {
@@ -81,6 +64,10 @@ fun OfflinePlayer.leaveGuild(): Boolean {
             false
         }
     }
+}
+
+infix fun <T, R : Comparable<R>> Map<T, R>.inside(map: Map<T, R>): Boolean {
+    return map.all { (ob, amount) -> this[ob]?.let { it >= amount } ?: false }
 }
 
 
@@ -420,6 +407,13 @@ enum class JoinResponse {
     REQUEST_SENT
 }
 
+enum class UpgradeResponse {
+    NOT_IN_GUILD,
+    UNKNOWN_REQUIREMENT,
+    SUCCESS,
+    CONDITION_INSUFFICIENT
+}
+
 val JoinResponse.path: String
     get() {
         return when (this) {
@@ -433,6 +427,15 @@ val JoinResponse.path: String
         }
     }
 
+val UpgradeResponse.path: String
+    get() {
+        return when (this) {
+            UpgradeResponse.UNKNOWN_REQUIREMENT -> "unknown-requirement"
+            UpgradeResponse.NOT_IN_GUILD -> "not-in-guild"
+            UpgradeResponse.CONDITION_INSUFFICIENT -> "requirement-insufficient"
+            UpgradeResponse.SUCCESS -> "success"
+        }
+    }
 
 val materialHead: Material
     get() = LegendGuild.config.materials.head

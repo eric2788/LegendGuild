@@ -2,6 +2,7 @@ package com.ericlam.mc.legendguild.config
 
 import com.ericlam.mc.kotlib.config.Resource
 import com.ericlam.mc.kotlib.config.dto.ConfigFile
+import com.ericlam.mc.legendguild.GuildSkill
 import com.ericlam.mc.legendguild.dao.GuildPlayer
 import com.ericlam.mc.legendguild.dao.QuestType
 import org.bukkit.Material
@@ -14,13 +15,19 @@ data class Config(
         val skillUpdate: String,
         val dailyContribution: Contribution,
         val postResources: PostResources,
-        val salaries: MutableMap<GuildPlayer.Role, Double>,
-        val default_salaries: MutableMap<GuildPlayer.Role, Double>,
+        val salaries: Map<GuildPlayer.Role, Double>,
+        val default_salaries: Map<GuildPlayer.Role, Double>,
         val materials: Materials,
         val leaderUpdate: Long,
+        val skills: Map<GuildSkill, UpgradeRequirement>,
         val questItems: Map<QuestType, Material>,
         val lossExp: String
 ) : ConfigFile() {
+
+    data class UpgradeRequirement(
+            val money: Double,
+            val items: Map<String, Int>
+    )
 
     data class PostResources(
             val money: Double,

@@ -2,7 +2,6 @@ package com.ericlam.mc.legendguild.ui.factory.request
 
 import com.ericlam.mc.kotlib.Clicker
 import com.ericlam.mc.kotlib.bukkit.BukkitPlugin
-import com.ericlam.mc.kotlib.row
 import com.ericlam.mc.legendguild.*
 import com.ericlam.mc.legendguild.dao.Guild
 import com.ericlam.mc.legendguild.dao.QuestPlayer
@@ -53,9 +52,26 @@ object RequestListUI : UIFactoryPaginated {
 
     override fun addPlayer(player: OfflinePlayer) {
         val request = LegendGuild.questPlayerController.findById(player.uniqueId)?.request ?: return
-        val inventories = paginatedCaches[player.guild] ?: return
+        val g = player.guild ?: let {
+            BukkitPlugin.plugin.debug("cannot find guild of ${player.name}")
+            return
+        }
+        val inventories = paginatedCaches[g] ?: let {
+            BukkitPlugin.plugin.debug("empty inventory list, creating new one")
+            val i = getPaginatedUI(player)
+            if (i.isNotEmpty()) {
+                addPlayer(player)
+                return
+            } else {
+                BukkitPlugin.plugin.debug("request list inventory of guild ${g.name} is empty")
+                return
+            }
+        }
+        var currentInv = inventories.lastOrNull() ?: let {
+            BukkitPlugin.plugin.debug("request list inventory of guild ${g.name} is empty")
+            return
+        }
         BukkitPlugin.plugin.debug("${this::class.simpleName} adding player ${player.name}")
-        var currentInv = inventories.last()
         val item = player.toSkull { listOf("&e委託內容:") + request.goal + listOf("&c===========", "&b貢獻值獎勵: ${request.contribute}") }
         if (currentInv.firstEmpty() == -1) {
             currentInv = createPage()
@@ -70,6 +86,8 @@ object RequestListUI : UIFactoryPaginated {
 
     override fun createPage(): Inventory {
         BukkitPlugin.plugin.debug("Creating new page of ${this::class.simpleName}")
+        pageCache.clear()
+        BukkitPlugin.plugin.debug("${this::class.simpleName} new page, so clear pageCache")
         return UIManager.p.createGUI(
                 rows = 6,
                 title = "委託列表一覽",
@@ -91,24 +109,7 @@ object RequestListUI : UIFactoryPaginated {
                         }
                 )
         ) {
-            mapOf(
-                    6 row 1 to Clicker(UIFactoryPaginated.previous) { player, _ ->
-                        val iterator = getIterator(player)
-                        if (iterator.hasPrevious()) {
-                            UIManager.openUI(player, iterator.previous())
-                        } else {
-                            player.sendMessage(Lang.Page["no-previous"])
-                        }
-                    },
-                    6 row 9 to Clicker(UIFactoryPaginated.next) { player, _ ->
-                        val iterator = getIterator(player)
-                        if (iterator.hasNext()) {
-                            UIManager.openUI(player, iterator.next())
-                        } else {
-                            player.sendMessage(Lang.Page["no-next"])
-                        }
-                    }
-            )
+            pageOperator
         }
     }
 }

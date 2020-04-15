@@ -3,8 +3,7 @@ package com.ericlam.mc.legendguild.command
 import com.ericlam.mc.kotlib.command.BukkitCommand
 import com.ericlam.mc.legendguild.*
 import com.ericlam.mc.legendguild.ui.factory.ShopUI
-import com.ericlam.mc.legendguild.ui.factory.request.RequestListUI
-import de.tr7zw.nbtapi.NBTEntity
+import com.ericlam.mc.legendguild.ui.factory.request.YourRequestUI
 
 object AdminCommand : BukkitCommand(
         name = "admin",
@@ -25,8 +24,7 @@ object AdminCommand : BukkitCommand(
                         player.sendMessage(Lang["not-in-guild"])
                         return@BukkitCommand
                     }
-                    val nbtPlayer = NBTEntity(player)
-                    nbtPlayer.setString("guild.admin.operate", "shop.check")
+                    ShopUI.adminOperate[player.uniqueId] = ShopUI.Operation.BANK
                     ShopUI.getUI(target)?.let { player.openInventory(it) } ?: run {
                         player.sendMessage(Lang["failed"])
                     }
@@ -44,8 +42,7 @@ object AdminCommand : BukkitCommand(
                         player.sendMessage(Lang["not-in-guild"])
                         return@BukkitCommand
                     }
-                    val nbtPlayer = NBTEntity(player)
-                    nbtPlayer.setString("guild.admin.operate", "shop.set")
+                    ShopUI.adminOperate[player.uniqueId] = ShopUI.Operation.SET_BANK
                     ShopUI.getUI(target)?.let { player.openInventory(it) } ?: run {
                         player.sendMessage(Lang["failed"])
                     }
@@ -64,7 +61,7 @@ object AdminCommand : BukkitCommand(
                         return@BukkitCommand
                     }
                     if (target.guild != null) {
-                        commandSender.sendMessage(Lang["joined-guild"].format(target))
+                        commandSender.sendMessage(Lang["joined-guild"].format(target.name))
                         return@BukkitCommand
                     }
                     target.joinGuild(guild.name)
@@ -95,11 +92,18 @@ object AdminCommand : BukkitCommand(
                         commandSender.sendMessage(Lang["not-number"].format(strings[1]))
                         return@BukkitCommand
                     }
-                    target.guild?.level(num) ?: run {
+                    val set = !(strings[1].startsWith("+") || num < 0)
+                    val g = target.guild ?: run {
                         commandSender.sendMessage(Lang["not-in-guild"])
                         return@BukkitCommand
                     }
-                    commandSender.tellSuccess()
+                    LegendGuild.guildController.update(g.name) {
+                        this level if (set) num - currentLevel else num
+                    }?.run {
+                        commandSender.tellSuccess()
+                    } ?: run {
+                        commandSender.sendMessage(Lang["not-in-guild"])
+                    }
                 },
                 BukkitCommand(
                         name = "exp",
@@ -114,11 +118,18 @@ object AdminCommand : BukkitCommand(
                         commandSender.sendMessage(Lang["not-number"].format(strings[1]))
                         return@BukkitCommand
                     }
-                    target.guild?.exp(num) ?: run {
+                    val set = !(strings[1].startsWith("+") || num < 0)
+                    val g = target.guild ?: run {
                         commandSender.sendMessage(Lang["not-in-guild"])
                         return@BukkitCommand
                     }
-                    commandSender.tellSuccess()
+                    LegendGuild.guildController.update(g.name) {
+                        this exp if (set) num - this.currentExp else num
+                    }?.run {
+                        commandSender.tellSuccess()
+                    } ?: run {
+                        commandSender.sendMessage(Lang["not-in-guild"])
+                    }
                 },
                 BukkitCommand(
                         name = "money",
@@ -133,12 +144,18 @@ object AdminCommand : BukkitCommand(
                         commandSender.sendMessage(Lang["not-number"].format(strings[1]))
                         return@BukkitCommand
                     }
-                    val res = target.guild?.resource ?: run {
+                    val set = !(strings[1].startsWith("+") || num < 0)
+                    val g = target.guild ?: run {
                         commandSender.sendMessage(Lang["not-in-guild"])
                         return@BukkitCommand
                     }
-                    res.money += num
-                    commandSender.tellSuccess()
+                    LegendGuild.guildController.update(g.name) {
+                        this.resource.money += if (set) num - this.resource.money else num
+                    }?.run {
+                        commandSender.tellSuccess()
+                    } ?: run {
+                        commandSender.sendMessage(Lang["not-in-guild"])
+                    }
                 },
                 BukkitCommand(
                         name = "skills",
@@ -157,8 +174,18 @@ object AdminCommand : BukkitCommand(
                         commandSender.sendMessage(Lang["not-number"].format(strings[1]))
                         return@BukkitCommand
                     }
-                    target.guild?.setSkillLevel(skills, num)
-                    commandSender.tellSuccess()
+                    val set = !(strings[1].startsWith("+") || num < 0)
+                    val g = target.guild ?: run {
+                        commandSender.sendMessage(Lang["not-in-guild"])
+                        return@BukkitCommand
+                    }
+                    LegendGuild.guildController.update(g.name) {
+                        this.setSkillLevel(skills, if (set) num - (this.currentSkills[skills] ?: num) else num)
+                    }?.run {
+                        commandSender.tellSuccess()
+                    } ?: run {
+                        commandSender.sendMessage(Lang["not-in-guild"])
+                    }
                 },
                 BukkitCommand(
                         name = "gd",
@@ -173,13 +200,19 @@ object AdminCommand : BukkitCommand(
                         commandSender.sendMessage(Lang["not-number"].format(strings[1]))
                         return@BukkitCommand
                     }
-                    LegendGuild.guildPlayerController.update(target.uniqueId) {
-                        this.contribution += num
-                    } ?: run {
+                    val set = !(strings[1].startsWith("+") || num < 0)
+                    val g = target.guild ?: run {
                         commandSender.sendMessage(Lang["not-in-guild"])
                         return@BukkitCommand
                     }
-                    commandSender.tellSuccess()
+                    LegendGuild.guildPlayerController.update(target.uniqueId) {
+                        this.contribution += if (set) num - this.contribution else num
+                    }?.run {
+                        commandSender.tellSuccess()
+                    } ?: run {
+                        commandSender.sendMessage(Lang["not-in-guild"])
+                    }
+
                 },
                 BukkitCommand(
                         name = "phelp",
@@ -191,7 +224,8 @@ object AdminCommand : BukkitCommand(
                         commandSender.sendMessage(Lang["player-not-found"])
                         return@BukkitCommand
                     }
-                    RequestListUI.getUI(target)?.let { player.openInventory(it) } ?: run {
+
+                    YourRequestUI.getUI(target)?.let { player.openInventory(it) } ?: run {
                         player.sendMessage(Lang["failed"])
                     }
                 }

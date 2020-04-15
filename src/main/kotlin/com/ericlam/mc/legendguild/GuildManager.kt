@@ -135,6 +135,29 @@ object GuildManager {
         }
     }
 
+    fun upgradeSkill(skill: GuildSkill, p: OfflinePlayer): UpgradeResponse {
+        val guild = p.guild ?: let {
+            return UpgradeResponse.NOT_IN_GUILD
+        }
+        val res = guild.resource
+        val requirement = LegendGuild.config.skills[skill] ?: let {
+            return UpgradeResponse.UNKNOWN_REQUIREMENT
+        }
+
+        return if (res.money >= requirement.money && res.items inside requirement.items) {
+            res.money -= requirement.money
+            requirement.items.forEach { (ob, am) ->
+                res.items[ob] = res.items[ob]!! - am
+                if (res.items[ob]!! <= 0) res.items.remove(ob)
+
+            }
+            LegendGuild.guildController.save { guild }
+            UpgradeResponse.SUCCESS
+        } else {
+            UpgradeResponse.CONDITION_INSUFFICIENT
+        }
+    }
+
     fun contributeMoney(player: OfflinePlayer): ContributeResponse {
         val g = player.guild ?: return ContributeResponse.NOT_IN_GUILD
         val p = player.guildPlayer ?: return ContributeResponse.NOT_IN_GUILD

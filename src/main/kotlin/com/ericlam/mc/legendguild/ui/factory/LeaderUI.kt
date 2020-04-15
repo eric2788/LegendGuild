@@ -50,30 +50,14 @@ object LeaderUI : UIFactoryPaginated {
     }
 
     override val pageCache: MutableMap<OfflinePlayer, ListIterator<Inventory>> = ConcurrentHashMap()
-
     override fun createPage(): Inventory {
         BukkitPlugin.plugin.debug("Creating new page of ${this::class.simpleName}")
+        pageCache.clear()
+        BukkitPlugin.plugin.debug("${this::class.simpleName} new page, so clear pageCache")
         return UIManager.p.createGUI(6, "&b宗門排行榜",
                 fills = mapOf((6 row 2)..(6 row 8) to Clicker(UIFactoryPaginated.decorate))
         ) {
-            mapOf(
-                    6 row 1 to Clicker(UIFactoryPaginated.previous) { player, _ ->
-                        val iterator = getIterator(player)
-                        if (iterator.hasPrevious()) {
-                            UIManager.openUI(player, iterator.previous())
-                        } else {
-                            player.sendMessage(Lang.Page["no-previous"])
-                        }
-                    },
-                    6 row 9 to Clicker(UIFactoryPaginated.next) { player, _ ->
-                        val iterator = getIterator(player)
-                        if (iterator.hasNext()) {
-                            UIManager.openUI(player, iterator.next())
-                        } else {
-                            player.sendMessage(Lang.Page["no-next"])
-                        }
-                    }
-            )
+            pageOperator
         }
     }
 }
