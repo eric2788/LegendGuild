@@ -32,7 +32,7 @@ object RequestUI : UIFactory {
                                 return@Clicker
                             }
 
-                            UIManager.openUI(p, RequestUI)
+                            UIManager.openUI(p, YourRequestUI)
                         },
                         1 to Clicker(job) { p, _ ->
                             LegendGuild.questPlayerController.findById(p.uniqueId)?.job ?: let {

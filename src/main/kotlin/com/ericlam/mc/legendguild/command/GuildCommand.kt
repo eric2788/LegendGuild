@@ -157,7 +157,7 @@ object GuildCommand : BukkitCommand(
                     }
                     val item = QuestPlayer.RequestItem(goal, con)
                     LegendGuild.questPlayerController.findById(player.uniqueId)?.request?.run {
-                        player.sendMessage(Lang["request-exist"])
+                        player.sendMessage(Lang.Request["request-exist"])
                         return@BukkitCommand
                     }
                     val b = LegendGuild.questPlayerController.update(player.uniqueId) {
@@ -165,6 +165,7 @@ object GuildCommand : BukkitCommand(
                     } == null
                     if (b) LegendGuild.questPlayerController.save { QuestPlayer(player.uniqueId, request = item) }
                     RequestListUI.addPlayer(player)
+                    player.tellSuccess()
                 },
                 BukkitCommand(
                         name = "response",

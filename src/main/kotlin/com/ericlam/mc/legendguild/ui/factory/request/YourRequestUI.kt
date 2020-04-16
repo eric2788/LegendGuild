@@ -61,7 +61,10 @@ object YourRequestUI : UIFactory {
                                 this.job = null
                             }
                             player.tellSuccess()
-                            takerPlayer?.notify(Lang.Request["request-done"].format(player.displayName))
+                            player.closeInventory()
+                            takerPlayer?.notify(Lang.Request["request-done"].format(player.name))
+                            takerPlayer?.player?.closeInventory()
+                            JobInfoUI.cooldown.remove(taker)
                         },
                         8 to Clicker(delete) { player, _ ->
                             if (checkAdmin.contains(player.uniqueId)) {
@@ -84,10 +87,16 @@ object YourRequestUI : UIFactory {
                                 this.request = null
                             }
                             player.tellSuccess()
+                            player.closeInventory()
                             Bukkit.getOfflinePlayer(taker)?.notify(Lang.Request["request-cancel"].format(player.displayName))
+                            Bukkit.getOfflinePlayer(taker)?.player?.closeInventory()
+                            JobInfoUI.cooldown.remove(taker)
                         }
                 )
             }
+        }.also {
+            updateInfo(bPlayer, it)
+            invCaches[bPlayer] = it
         }
     }
 
@@ -101,7 +110,7 @@ object YourRequestUI : UIFactory {
                 lore = item.goal.map { it.translateColorCode() }
         )
 
-        val owner = UIManager.p.itemStack(materialHead, display = "接手者: ${item.taken ?: "沒有人"}")
+        val owner = UIManager.p.itemStack(materialHead, display = "接手者: ${item.taken?.let { Bukkit.getOfflinePlayer(it) }?.name ?: "沒有人"}")
         inventory.setItem(0, info)
         inventory.setItem(6, owner)
     }

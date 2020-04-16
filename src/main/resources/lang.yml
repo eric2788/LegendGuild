@@ -63,7 +63,9 @@ request:
   noone-taken: "noone taken your request"
   request-not-found: "you don't have a request"
   request-exist: "you already have a request"
+  job-self: "you cannot take your own request!"
   request-done: "{0} has marked the job as finish, you got the rewards"
+  cooldown-request: "please wait 30 min until the cool down the finish"
 pvp:
   changed-invite: "that guild has changed his invite to other guild"
   invite-sent: "your invite has been set"

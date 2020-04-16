@@ -2,6 +2,7 @@ package com.ericlam.mc.legendguild.ui.factory.request
 
 import com.ericlam.mc.kotlib.Clicker
 import com.ericlam.mc.kotlib.bukkit.BukkitPlugin
+import com.ericlam.mc.kotlib.not
 import com.ericlam.mc.legendguild.*
 import com.ericlam.mc.legendguild.dao.Guild
 import com.ericlam.mc.legendguild.dao.QuestPlayer
@@ -30,6 +31,7 @@ object RequestListUI : UIFactoryPaginated {
             while (queue.isNotEmpty()) {
                 val requestItem = queue.poll()
                 val request = requestItem?.request ?: continue
+                if (request.taken != null) continue
                 val skull = Bukkit.getOfflinePlayer(requestItem.user).toSkull { listOf("&e委託內容:") + request.goal + listOf("&c===========", "&b貢獻值獎勵: ${request.contribute}") }
                 currentInv.addItem(skull)
                 if (currentInv.firstEmpty() == -1) {
@@ -44,11 +46,9 @@ object RequestListUI : UIFactoryPaginated {
         }
     }
 
-    override val pageCache: MutableMap<OfflinePlayer, ListIterator<Inventory>>
-        get() = ConcurrentHashMap()
+    override val pageCache: MutableMap<OfflinePlayer, ListIterator<Inventory>> = ConcurrentHashMap()
 
-    override val paginatedCaches: MutableMap<Guild, MutableList<Inventory>>
-        get() = ConcurrentHashMap()
+    override val paginatedCaches: MutableMap<Guild, MutableList<Inventory>> = ConcurrentHashMap()
 
     override fun addPlayer(player: OfflinePlayer) {
         val request = LegendGuild.questPlayerController.findById(player.uniqueId)?.request ?: return
@@ -97,15 +97,29 @@ object RequestListUI : UIFactoryPaginated {
                                 player.sendMessage(Lang["player-not-found"])
                                 return@Clicker
                             }
+                            id.not(player.uniqueId) ?: let {
+                                player.sendMessage(Lang.Request["job-self"])
+                                return@Clicker
+                            }
                             val request = LegendGuild.questPlayerController.findById(id)?.request ?: let {
                                 player.sendMessage(Lang.Request["job-not-found"])
                                 return@Clicker
                             }
-                            val jobItem = QuestPlayer.JobItem(request, player.uniqueId)
-                            val b = LegendGuild.questPlayerController.update(player.uniqueId) { job = jobItem } == null
-                            if (b) LegendGuild.questPlayerController.save { QuestPlayer(player.uniqueId, job = jobItem) }
+                            val jobItem = QuestPlayer.JobItem(request, id)
+
+                            LegendGuild.questPlayerController.update(player.uniqueId) { job = jobItem } ?: also {
+                                LegendGuild.questPlayerController.save { QuestPlayer(player.uniqueId, job = jobItem) }
+                            }
+                            LegendGuild.questPlayerController.update(id) {
+                                this.request ?: also {
+                                    BukkitPlugin.plugin.error(IllegalStateException("requestItem of $id not exist!!!"))
+                                    return@update
+                                }
+                                this.request?.taken = player.uniqueId
+                            }
                             player.sendMessage(Lang.Request["got-job"])
                             Bukkit.getOfflinePlayer(id)?.notify(Lang.Request["accepted"].format(player.name))
+                            inventory.remove(stack)
                         }
                 )
         ) {

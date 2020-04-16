@@ -1,6 +1,7 @@
 package com.ericlam.mc.legendguild.ui.factory.request
 
 import com.ericlam.mc.kotlib.Clicker
+import com.ericlam.mc.kotlib.msgFormat
 import com.ericlam.mc.legendguild.Lang
 import com.ericlam.mc.legendguild.LegendGuild
 import com.ericlam.mc.legendguild.notify
@@ -12,7 +13,11 @@ import org.bukkit.Material
 import org.bukkit.OfflinePlayer
 import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.ItemStack
+import java.time.Duration
+import java.time.LocalDateTime
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.math.abs
 
 object JobInfoUI : UIFactory {
 
@@ -24,15 +29,22 @@ object JobInfoUI : UIFactory {
 
     private val barrier: ItemStack = UIManager.p.itemStack(Material.BARRIER, display = "&c你目前沒有工作。")
 
+    val cooldown: MutableMap<UUID, LocalDateTime> = ConcurrentHashMap()
+
     override fun getUI(bPlayer: OfflinePlayer): Inventory? {
         return invCaches[bPlayer] ?: let {
             UIManager.p.createGUI(1, "&a你的工作") {
                 mapOf(
-                        1 to Clicker(barrier),
+                        0 to Clicker(barrier),
                         8 to Clicker(tryFinish) { player, _ ->
                             LegendGuild.questPlayerController.findById(player.uniqueId)?.job?.also { item ->
-                                Bukkit.getOfflinePlayer(item.owner)?.notify(Lang.Request["request-finish"].format(player.name))?.also {
+                                if (cooldown[player.uniqueId]?.let { abs(Duration.between(LocalDateTime.now(), it).toMinutes()) < 30 } == true) {
+                                    player.sendMessage(Lang.Request["cooldown-request"])
+                                    return@Clicker
+                                }
+                                Bukkit.getOfflinePlayer(item.owner)?.notify(Lang.Request["request-finish"].msgFormat(player.name))?.also {
                                     player.tellSuccess()
+                                    cooldown[player.uniqueId] = LocalDateTime.now()
                                 } ?: also {
                                     player.sendMessage(Lang["player-not-found"])
                                 }
@@ -60,9 +72,9 @@ object JobInfoUI : UIFactory {
         }
         val infoItem: ItemStack = UIManager.p.itemStack(Material.PAPER,
                 display = "&e委託內容",
-                lore = job.request.goal
+                lore = job.request.goal + listOf("&e==============", "&a委託人: ${Bukkit.getOfflinePlayer(job.owner)?.name}")
         )
-        inventory.setItem(1, infoItem)
+        inventory.setItem(0, infoItem)
     }
 
 }

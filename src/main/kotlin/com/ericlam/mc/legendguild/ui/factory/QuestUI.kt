@@ -43,7 +43,7 @@ object QuestUI : UIFactory {
                             LegendGuild.questPlayerController.update(bPlayer.uniqueId) {
                                 val result = tryFinish()
                                 player.sendMessage(Lang[result.path])
-                                if (result == QuestPlayer.QuestResult.SUCCESS_AND_REWARDED) {
+                                if (result in listOf(QuestPlayer.QuestResult.SUCCESS_AND_REWARDED, QuestPlayer.QuestResult.DEADLINED)) {
                                     player.closeInventory()
                                     questPlayer.item = null
                                 }

@@ -30,7 +30,7 @@ data class QuestPlayer(
     data class RequestItem(
             val goal: List<String>,
             val contribute: Int,
-            val taken: UUID? = null
+            var taken: UUID? = null
     )
 
     data class JobItem(
@@ -58,18 +58,15 @@ data class QuestPlayer(
     fun tryFinish(): QuestResult {
         return when {
             item == null -> QuestResult.NOT_STARTED_ANY
-            item!!.deadlined -> QuestResult.DEADLINED.also {
-                LegendGuild.questPlayerController.update(user) {
-                    this.item = null
-                }
-            }
-            item!!.matchGoal -> QuestResult.SUCCESS_AND_REWARDED.also {
+            item!!.deadlined -> QuestResult.DEADLINED
+            item!!.matchGoal -> {
                 LegendGuild.guildPlayerController.update(user) {
                     contribution += item!!.questType.contribution
                     LegendGuild.guildController.update(guild) {
                         this exp item!!.questType.exp
                     }
                 }
+                QuestResult.SUCCESS_AND_REWARDED
             }
             else -> QuestResult.FAILED
         }

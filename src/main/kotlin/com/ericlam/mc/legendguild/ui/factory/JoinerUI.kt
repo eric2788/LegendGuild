@@ -23,7 +23,7 @@ object JoinerUI : UIFactoryPaginated {
     override val pageCache: MutableMap<OfflinePlayer, ListIterator<Inventory>> = ConcurrentHashMap()
 
     override fun customFilter(guild: Guild, item: ItemStack): Boolean {
-        return !guild.members.map { m -> m.uuid.toString() }.contains(NBTItem(item).getString("guild.head.owner"))
+        return !guild.members.map { m -> m.uuid.toString() }.contains(NBTItem(item.also { it.amount = 1 }).getString("guild.head.owner"))
     }
 
     override fun createPage(): Inventory {
