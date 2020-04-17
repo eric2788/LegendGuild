@@ -6,7 +6,7 @@ import com.ericlam.mc.kotlib.kClassOf
 import com.ericlam.mc.legendguild.command.GuildCommand
 import com.ericlam.mc.legendguild.config.Config
 import com.ericlam.mc.legendguild.config.Items
-import com.ericlam.mc.legendguild.config.Lang
+import com.ericlam.mc.legendguild.config.LangFile
 import com.ericlam.mc.legendguild.config.Perms
 import com.ericlam.mc.legendguild.dao.GuildController
 import com.ericlam.mc.legendguild.dao.GuildPlayerController
@@ -36,8 +36,9 @@ class LegendGuild : BukkitPlugin() {
         private val attachMap: MutableMap<UUID, PermissionAttachment> = ConcurrentHashMap()
         fun attachment(player: Player): PermissionAttachment = attachMap[player.uniqueId]
                 ?: player.addAttachment(plugin).also { attachMap[player.uniqueId] = it }
+
         private lateinit var _config: Config
-        private lateinit var _lang: Lang
+        private lateinit var _lang: LangFile
         private lateinit var _item: Items
         private lateinit var _perms: Perms
         private lateinit var _econmony: Economy
@@ -48,7 +49,7 @@ class LegendGuild : BukkitPlugin() {
         private lateinit var _qpcontroller: QuestPlayerController
         val config: Config
             get() = _config
-        val lang: Lang
+        val lang: LangFile
             get() = _lang
         val item: Items
             get() = _item
@@ -71,7 +72,7 @@ class LegendGuild : BukkitPlugin() {
     override fun enable() {
         val manager = KotLib.getConfigFactory(this)
                 .register(Config::class).register(Items::class)
-                .register(Lang::class).register(Perms::class)
+                .register(LangFile::class).register(Perms::class)
                 .registerDao(kClassOf(), GuildController::class)
                 .registerDao(kClassOf(), GuildPlayerController::class)
                 .registerDao(kClassOf(), GuildShopItemController::class)
@@ -99,18 +100,23 @@ class LegendGuild : BukkitPlugin() {
             val guild = killer.guild ?: return@listen
             val damagePlus = guild.percentage(GuildSkill.AZURE_DRAGON)
             it.damage += it.damage * damagePlus
+            plugin.debug("total damage: ${it.damage} (+$damagePlus)")
             val critical = guild.percentage(GuildSkill.VERMILION_BIRD) * 100
+            plugin.debug("critical percentage: $critical%")
             if ((0..100).random() < critical) {
                 val extra = it.damage * guild.percentage(GuildSkill.WHITE_TIGER)
-                killer.sendMessage(lang["damage-critical"].format(extra))
+                killer.sendMessage(lang["damage-critical"].mFormat(extra))
                 it.damage += extra
+                plugin.debug("total damage: ${it.damage} (+$extra critical damage)")
             }
         }
 
         listen<EntityDamageEvent> {
             val player = it.entity as? Player ?: return@listen
             val guild = player.guild ?: return@listen
-            it.damage -= it.damage * guild.percentage(GuildSkill.BLACK_TORTOISE)
+            val damageMinus = it.damage * guild.percentage(GuildSkill.BLACK_TORTOISE)
+            it.damage -= damageMinus
+            plugin.debug("total received damage: ${it.damage} (-$damageMinus)")
         }
 
         listen<PlayerJoinEvent> {
@@ -127,6 +133,7 @@ class LegendGuild : BukkitPlugin() {
             }
             queue[player.uniqueId]?.forEach { msg -> player.sendMessage(msg) }
             player.tellInvite()
+            player.tellPvPInvite()
         }
 
         listen<InventoryCloseEvent> {

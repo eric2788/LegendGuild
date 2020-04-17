@@ -2,6 +2,7 @@ package com.ericlam.mc.legendguild.ui.factory
 
 import com.ericlam.mc.kotlib.Clicker
 import com.ericlam.mc.kotlib.bukkit.BukkitPlugin
+import com.ericlam.mc.kotlib.msgFormat
 import com.ericlam.mc.legendguild.Lang
 import com.ericlam.mc.legendguild.LegendGuild
 import com.ericlam.mc.legendguild.dao.Guild
@@ -26,7 +27,7 @@ object SalaryUI : UIFactory {
             salarySetter.remove(it.player)?.also { role ->
                 it.isCancelled = true
                 val salary = it.message.toDoubleOrNull() ?: let { _ ->
-                    it.player.sendMessage(Lang["not-number"].format(it.message))
+                    it.player.sendMessage(Lang["not-number"].msgFormat(it.message))
                     return@also
                 }
                 val g = it.player.guild ?: let { _ ->

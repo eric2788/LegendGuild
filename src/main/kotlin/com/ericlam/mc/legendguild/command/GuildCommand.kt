@@ -2,7 +2,9 @@ package com.ericlam.mc.legendguild.command
 
 import com.ericlam.mc.kotlib.bukkit.BukkitPlugin
 import com.ericlam.mc.kotlib.command.BukkitCommand
+import com.ericlam.mc.kotlib.msgFormat
 import com.ericlam.mc.legendguild.*
+import com.ericlam.mc.legendguild.config.Items
 import com.ericlam.mc.legendguild.dao.GuildPlayer
 import com.ericlam.mc.legendguild.dao.QuestPlayer
 import com.ericlam.mc.legendguild.ui.UIManager
@@ -43,29 +45,44 @@ object GuildCommand : BukkitCommand(
                         name = "pvp",
                         description = "宗門戰爭接受或拒絕指令",
                         permission = "guild.war.handle",
-                        optionalPlaceholders = arrayOf("decline | accept")
+                        optionalPlaceholders = arrayOf("decline | accept", "guild")
                 ) { commandSender, strings ->
                     val player = commandSender.toPlayer ?: return@BukkitCommand
-                    val guild = player.guild ?: run {
+                    val targetGuild = player.guild ?: run {
                         player.sendMessage(Lang["not-in-guild"])
                         return@BukkitCommand
                     }
-                    if (strings.isEmpty()) {
+                    if (strings.size < 2) {
                         UIManager.openUI(player, PvPUI)
                         return@BukkitCommand
                     }
-                    val accept = strings[0].equals("accept", ignoreCase = true)
-                    val inv = player.guild?.let { PvPUI.invites[it] } ?: run {
-                        player.sendMessage(Lang.PvP["no-invite"])
+                    val sentGuild = LegendGuild.guildController.findById(strings[1]) ?: run {
+                        player.sendMessage(Lang["unknown-guild"].msgFormat(strings[1]))
                         return@BukkitCommand
                     }
-                    if (accept) {
-                        player.sendMessage(Lang.PvP["accepted"].format(inv.guild.name))
-                        PvPUI.launchWar(inv.guild, guild, inv.small)
-                    } else {
-                        player.sendMessage(Lang.PvP["declined"].format(inv.guild.name))
-                        inv.guild.members.find { p -> p.role.hasPower(GuildPlayer.Role.ELDER) }?.player?.notify(Lang.PvP["be-declined"].format(guild.name))
+
+                    if (PvPUI.warList.any { sentGuild.name in listOf(it.g1.name, it.g2.name) }) {
+                        player.sendMessage(Lang.PvP["in-war-guild"].mFormat(sentGuild.name))
+                        return@BukkitCommand
+                    } else if (PvPUI.warList.any { targetGuild.name in listOf(it.g1.name, it.g2.name) }) {
+                        player.sendMessage(Lang.PvP["in-war"])
+                        return@BukkitCommand
                     }
+
+                    val accept = strings[0].equals("accept", ignoreCase = true)
+                    val inv = PvPUI.invites[sentGuild]?.takeIf { inv -> inv.guild.name == targetGuild.name } ?: run {
+                        player.sendMessage(Lang.PvP["no-invite"].mFormat(sentGuild.name))
+                        return@BukkitCommand
+                    }
+
+                    if (accept) {
+                        player.sendMessage(Lang.PvP["accepted"].mFormat(sentGuild.name))
+                        PvPUI.launchWar(sentGuild, targetGuild, inv.small)
+                    } else {
+                        player.sendMessage(Lang.PvP["declined"].mFormat(sentGuild.name))
+                        sentGuild.members.find { p -> p.role hasPower GuildPlayer.Role.ELDER }?.player?.notify(Lang.PvP["be-declined"].mFormat(targetGuild.name))
+                    }
+                    PvPUI.invites.remove(sentGuild)
                 },
                 BukkitCommand(
                         name = "create",
@@ -93,7 +110,7 @@ object GuildCommand : BukkitCommand(
                         return@BukkitCommand
                     }
                     if (target.guild != null) {
-                        player.sendMessage(Lang["joined-guild"].format(target.name))
+                        player.sendMessage(Lang["joined-guild"].mFormat(target.name))
                         return@BukkitCommand
                     }
                     if (guild.invites.add(target.uniqueId)) target.player?.tellInvite()
@@ -147,7 +164,7 @@ object GuildCommand : BukkitCommand(
                 ) { sender, args ->
                     val player = sender.toPlayer ?: return@BukkitCommand
                     val con = args[0].toIntOrNull() ?: run {
-                        player.sendMessage(Lang["not-number"].format(args[0]))
+                        player.sendMessage(Lang["not-number"].mFormat(args[0]))
                         return@BukkitCommand
                     }
                     val goal = args.drop(1).toList()
@@ -177,6 +194,10 @@ object GuildCommand : BukkitCommand(
                                         placeholders = arrayOf("guild")
                                 ) { sender, arr ->
                                     val player = sender.toPlayer ?: return@BukkitCommand
+                                    if (player.guild != null) {
+                                        player.sendMessage(Lang["in-guild"])
+                                        return@BukkitCommand
+                                    }
                                     val g = LegendGuild.guildController.findById(arr[0]) ?: run {
                                         player.sendMessage(Lang["unknown-guild"])
                                         return@BukkitCommand
@@ -191,6 +212,10 @@ object GuildCommand : BukkitCommand(
                                         placeholders = arrayOf("guild")
                                 ) { sender, arr ->
                                     val player = sender.toPlayer ?: return@BukkitCommand
+                                    if (player.guild != null) {
+                                        player.sendMessage(Lang["in-guild"])
+                                        return@BukkitCommand
+                                    }
                                     val g = LegendGuild.guildController.findById(arr[0]) ?: run {
                                         player.sendMessage(Lang["unknown-guild"])
                                         return@BukkitCommand
@@ -213,7 +238,7 @@ object GuildCommand : BukkitCommand(
                                 ) { sender, args ->
                                     val player = sender.toPlayer ?: return@BukkitCommand
                                     val price = args[1].toIntOrNull() ?: run {
-                                        sender.sendMessage(Lang["not-number"].format(args[1]))
+                                        sender.sendMessage(Lang["not-number"].mFormat(args[1]))
                                         return@BukkitCommand
                                     }
                                     val hand = player.inventory.itemInMainHand
@@ -241,6 +266,7 @@ object GuildCommand : BukkitCommand(
                                     val name = args[0]
                                     fun find(item: ItemStack?): Boolean = item?.let { stack -> NBTItem(stack).getString("guild.sell.name") == name }
                                             ?: false
+
                                     val item = ShopUI.getPaginatedUI(player).find { inv -> inv.any(::find) }?.find(::find)
                                             ?: run {
                                                 BukkitPlugin.plugin.debug("cannot find item $name")
@@ -267,29 +293,30 @@ object GuildCommand : BukkitCommand(
                                 BukkitCommand(
                                         name = "upload",
                                         description = "上傳物品",
-                                        placeholders = arrayOf("name")
+                                        placeholders = arrayOf("name"),
+                                        permission = "guild.item.upload"
                                 ) { sender, args ->
                                     val player = sender.toPlayer ?: return@BukkitCommand
-                                    val name = args[0]
                                     val itemC = LegendGuild.item
+                                    val name = args[0]
                                     if (itemC.items.containsKey(name)) {
                                         player.sendMessage(Lang.Shop["same-name"])
                                         return@BukkitCommand
                                     }
-                                    itemC.items[name] = player.inventory.itemInMainHand
+                                    itemC.items[name] = Items.ItemWrapper(player.inventory.itemInMainHand.asOne().toBukkitItemStack)
                                     itemC.save()
                                     player.tellSuccess()
                                 },
                                 BukkitCommand(
                                         name = "remove",
                                         description = "刪除物品",
-                                        placeholders = arrayOf("name")
+                                        placeholders = arrayOf("name"),
+                                        permission = "guild.item.remove"
                                 ) { sender, args ->
                                     val player = sender.toPlayer ?: return@BukkitCommand
                                     val name = args[0]
                                     val itemC = LegendGuild.item
                                     itemC.items.remove(name)?.also {
-                                        itemC.save()
                                         player.tellSuccess()
                                     } ?: run {
                                         player.sendMessage(Lang.Shop["unknown-item"])

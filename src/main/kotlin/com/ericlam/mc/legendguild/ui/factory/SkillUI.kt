@@ -46,7 +46,7 @@ object SkillUI : UIFactory {
                             "&a目前等級: &7Lv$level",
                             "&e升級需求:",
                             "  - &f金錢: &6$${requirement.money}"
-                    ) + requirement.items.map { (item, amount) -> "  - &f$item &cx$amount" }
+                    ) + requirement.items.map { (item, amount) -> "  - &f${Lang.Item[item]} &cx$amount" }
             )
         }
         (listOf(1, 3, 5, 7) zip items).forEach { inventory.setItem(it.first, it.second) }

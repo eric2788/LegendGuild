@@ -41,7 +41,7 @@ object PromoteUI : UIFactoryPaginated {
                     val newRole = GuildPlayer.Role.fromName(it.message)
                             ?: GuildPlayer.Role.values().find { r -> r.name.equals(it.message, ignoreCase = true) }
                             ?: let { _ ->
-                                it.player.sendMessage(Lang["no-role"].format(it.message))
+                                it.player.sendMessage(Lang["no-role"].mFormat(it.message))
                                 return@also
                             }
 

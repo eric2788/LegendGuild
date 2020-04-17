@@ -216,7 +216,7 @@ object GuildManager {
                     if ((stack?.type ?: Material.AIR) == Material.AIR) {
                         ResourceResponse.INVALID_ITEM
                     } else {
-                        val key = item.items.entries.find { it.value == stack }?.key
+                        val key = item.items.entries.find { it.value.item == stack.asOne() }?.key
                                 ?: return ResourceResponse.INVALID_ITEM
                         config.postResources.items[key]?.let {
                             p.contribution += it

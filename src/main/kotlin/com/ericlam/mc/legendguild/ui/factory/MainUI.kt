@@ -54,7 +54,7 @@ object MainUI : UIFactory {
 
     private val pvp = p.itemStack(
             material = Material.DIAMOND_SWORD,
-            display = "&e宗門戰爭資訊"
+            display = "&e宗門戰爭"
     )
 
     private val salaryGet = p.itemStack(

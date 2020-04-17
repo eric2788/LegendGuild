@@ -65,7 +65,7 @@ object JoinUI : UIFactoryPaginated {
                             val guild = NBTItem(stack).getString("guild.join") ?: return@Clicker
                             BukkitPlugin.plugin.debug("${player.name} just clicked a button for joining $guild !")
                             val res = player.join(guild)
-                            player.sendMessage(Lang[res.path].format(guild))
+                            player.sendMessage(Lang[res.path].mFormat(guild))
                         },
                         (6 row 2)..(6 row 8) to Clicker(UIFactoryPaginated.decorate)
                 )

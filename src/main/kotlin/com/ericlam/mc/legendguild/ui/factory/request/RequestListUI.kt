@@ -118,7 +118,7 @@ object RequestListUI : UIFactoryPaginated {
                                 this.request?.taken = player.uniqueId
                             }
                             player.sendMessage(Lang.Request["got-job"])
-                            Bukkit.getOfflinePlayer(id)?.notify(Lang.Request["accepted"].format(player.name))
+                            Bukkit.getOfflinePlayer(id)?.notify(Lang.Request["accepted"].mFormat(player.name))
                             inventory.remove(stack)
                         }
                 )

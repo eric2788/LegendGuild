@@ -12,6 +12,7 @@ import com.ericlam.mc.legendguild.dao.QuestPlayer
 import com.ericlam.mc.legendguild.ui.UIManager
 import com.ericlam.mc.legendguild.ui.factory.JoinerUI
 import com.ericlam.mc.legendguild.ui.factory.PromoteUI
+import com.ericlam.mc.legendguild.ui.factory.PvPUI
 import com.ericlam.mc.legendguild.ui.factory.ShopUI
 import com.google.gson.Gson
 import com.mojang.authlib.GameProfile
@@ -150,7 +151,7 @@ fun ItemMeta.toSkullMeta(skin: String): ItemMeta {
     return this
 }
 
-fun String.format(vararg o: Any?): String {
+fun String.mFormat(vararg o: Any?): String {
     return this.msgFormat(*o)
 }
 
@@ -177,7 +178,7 @@ object Lang {
 
     object Item {
         operator fun get(path: String): String {
-            return LegendGuild.lang["item-translate.$path"]
+            return LegendGuild.lang["item-translate.$path"].not("null") ?: path
         }
     }
 
@@ -324,12 +325,25 @@ fun OfflinePlayer.notify(msg: String) {
 fun Player.tellInvite() {
     BukkitPlugin.plugin.debug("tell invite to $name")
     GuildManager.guildMap.filter { g -> g.invites.contains(this.uniqueId) }.forEach { g ->
-        this.sendMessage(Lang["invited"].format(g.name))
+        this.sendMessage(Lang["invited"].mFormat(g.name))
         val yes = ComponentBuilder("答應請求").color(ChatColor.GREEN).underlined(true).event(ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/guild response accept ${g.name}")).event(HoverEvent(HoverEvent.Action.SHOW_TEXT, TextComponent.fromLegacyText("點擊以選擇")))
         val no = ComponentBuilder("拒絕請求").color(ChatColor.RED).underlined(true).event(ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/guild response decline ${g.name}")).event(HoverEvent(HoverEvent.Action.SHOW_TEXT, TextComponent.fromLegacyText("點擊以選擇")))
         val text = ComponentBuilder("[").color(ChatColor.GRAY).append(yes.create()).color(ChatColor.GRAY).append("|").append(no.create()).color(ChatColor.GRAY).append("]").create()
         this.spigot().sendMessage(*text)
         BukkitPlugin.plugin.debug("tell invite to $name for joining guild ${g.name}")
+    }
+}
+
+fun Player.tellPvPInvite() {
+    PvPUI.invites.filter { (_, v) ->
+        v.guild[this.uniqueId]?.role?.hasPower(GuildPlayer.Role.CO_ELDER) ?: false
+    }.forEach { (g, inv) ->
+        this.sendMessage(Lang.PvP["get-invite"].mFormat(g.name, if (inv.small) "§c小型§r" else "§a大型§r"))
+        val yes = ComponentBuilder("答應請求").color(ChatColor.GREEN).underlined(true).event(ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/guild pvp accept ${g.name}")).event(HoverEvent(HoverEvent.Action.SHOW_TEXT, TextComponent.fromLegacyText("點擊以選擇")))
+        val no = ComponentBuilder("拒絕請求").color(ChatColor.RED).underlined(true).event(ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/guild pvp decline ${g.name}")).event(HoverEvent(HoverEvent.Action.SHOW_TEXT, TextComponent.fromLegacyText("點擊以選擇")))
+        val text = ComponentBuilder("[").color(ChatColor.GRAY).append(yes.create()).color(ChatColor.GRAY).append("|").append(no.create()).color(ChatColor.GRAY).append("]").create()
+        this.spigot().sendMessage(*text)
+        BukkitPlugin.plugin.debug("tell pvp invite to $name for pvp with guild ${g.name}")
     }
 }
 

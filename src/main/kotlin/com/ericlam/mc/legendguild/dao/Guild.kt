@@ -51,6 +51,10 @@ data class Guild(
             level--
             this.exp += maxExp
         }
+        if (this.level < 0) {
+            this.level = 0
+            this.exp = 0.0
+        }
     }
 
     infix fun level(level: Int) {
@@ -61,7 +65,7 @@ data class Guild(
 
     fun percentage(skill: GuildSkill): Double {
         val level = skills[skill] ?: 0
-        return JavaScript.eval(LegendGuild.config.skillUpdate.trim().replace("%level%", level.toString())) as Double / 100
+        return (JavaScript.eval(LegendGuild.config.skillValue.trim().replace("%level%", level.toString())) as Number).toDouble() / 100
     }
 
     fun setSkillLevel(skill: GuildSkill, level: Int) {
@@ -77,11 +81,11 @@ data class Guild(
     }
 
     override fun hashCode(): Int {
-        return name.hashCode() + members.size
+        return name.hashCode()
     }
 
     override fun equals(other: Any?): Boolean {
-        return (other as? Guild)?.let { it.name == this.name && it.members.size == this.members.size }
+        return (other as? Guild)?.let { it.name == this.name }
                 ?: false
     }
 

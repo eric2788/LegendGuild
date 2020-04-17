@@ -6,4 +6,4 @@ import com.ericlam.mc.kotlib.config.dto.MessageFile
 
 @Resource(locate = "lang.yml")
 @Prefix(path = "prefix")
-class Lang : MessageFile()
+class LangFile : MessageFile()

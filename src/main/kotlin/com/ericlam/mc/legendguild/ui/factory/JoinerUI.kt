@@ -48,7 +48,7 @@ object JoinerUI : UIFactoryPaginated {
                             when {
                                 isLeftClick -> {
                                     if (LegendGuild.guildPlayerController.findById(uuid) != null) {
-                                        player.sendMessage(Lang["joined-guild"].format(playerName))
+                                        player.sendMessage(Lang["joined-guild"].mFormat(playerName))
                                         return@Clicker
                                     }
                                     val offline = Bukkit.getOfflinePlayer(uuid)

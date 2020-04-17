@@ -73,4 +73,13 @@ data class QuestPlayer(
     }
 
 
+    override fun hashCode(): Int {
+        return user.hashCode()
+    }
+
+    override fun equals(other: Any?): Boolean {
+        return (other as? QuestPlayer)?.let { it.user == user } ?: false
+    }
+
+
 }

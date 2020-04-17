@@ -2,6 +2,7 @@ package com.ericlam.mc.legendguild.ui.factory
 
 import com.ericlam.mc.kotlib.Clicker
 import com.ericlam.mc.kotlib.bukkit.BukkitPlugin
+import com.ericlam.mc.kotlib.msgFormat
 import com.ericlam.mc.kotlib.row
 import com.ericlam.mc.legendguild.*
 import com.ericlam.mc.legendguild.dao.Guild
@@ -22,7 +23,6 @@ import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.ItemStack
 import java.util.*
 import java.util.concurrent.TimeUnit
-import kotlin.text.format
 
 object PvPUI : UIFactoryPaginated {
 
@@ -37,7 +37,7 @@ object PvPUI : UIFactoryPaginated {
     val warList = LinkedList<War>()
 
     init {
-        UIManager.p.schedule(period = 30, unit = TimeUnit.MINUTES) { updateInv() }
+        UIManager.p.schedule(delay = 1, period = 30, unit = TimeUnit.MINUTES) { updateInv() }
         UIManager.p.listen<PlayerDeathEvent> {
             val victim = it.entity
             val killer = (it.entity.lastDamageCause as? EntityDamageByEntityEvent)?.damager?.playerKiller
@@ -55,7 +55,7 @@ object PvPUI : UIFactoryPaginated {
             } else if (war.g1Score >= war.target) {
                 endWar(war.g1, war.g2, war)
             } else {
-                war.bossBar.title = "§b§l${war.g1.name} §r§b${war.g1Score} §7- §c${war.g2Score} §c§l${war.g1.name}"
+                war.bossBar.title = "§b§l${war.g1.name} §r§b${war.g1Score} §7- §6§l${war.target}§r §7- §c${war.g2Score} §c§l${war.g1.name}"
             }
         }
 
@@ -64,14 +64,15 @@ object PvPUI : UIFactoryPaginated {
         }
     }
 
-    fun launchWar(sent: Guild, accept: Guild, small: Boolean) {
-        val target = if (small) 25 else 50
+    fun launchWar(sent: Guild, accept: Guild, small: Boolean, force: Boolean = false) {
+        val target = if (small) LegendGuild.config.war.small else LegendGuild.config.war.big
         val bar = Bukkit.createBossBar("???", BarColor.PINK, BarStyle.SOLID)
-        bar.title = "§b§l${sent.name} §r§b0 §7- §c0 §c§l${accept.name}"
+        bar.title = "§b§l${sent.name} §r§b0 §7- §6§l$target§r §7- §c0 §c§l${accept.name}"
         val war = War(sent, accept, target = target, bossBar = bar)
         warList.add(war)
         (sent.members + accept.members).map { it.player }.forEach {
-            it.notify(Lang.PvP["war-start"].format(target))
+            it.notify(Lang.PvP["war-start"].msgFormat(target))
+            if (force) it.notify(Lang.PvP["force-launched"].msgFormat(sent.name))
             it.player?.let { p -> bar.addPlayer(p) }
         }
         UIManager.p.schedule(delay = 1, unit = TimeUnit.DAYS) {
@@ -81,11 +82,15 @@ object PvPUI : UIFactoryPaginated {
     }
 
     private fun endWar(winner: Guild, loser: Guild, war: War) {
-        val exp = JavaScript.eval(LegendGuild.config.lossExp.trim()) as Double
-        winner exp +exp
-        loser exp -exp
+        fun calculate(g: Guild): Double = (JavaScript.eval(LegendGuild.config.lossExp.replace("%level%", g.currentExp.toString()).trim()) as Number).toDouble()
+        val winExp = calculate(loser)
+        val loseExp = calculate(winner)
+        winner exp +winExp
+        loser exp -loseExp
         war.bossBar.removeAll()
-        (winner.members + loser.members).map { it.player }.forEach { it.notify(Lang.PvP["war-end"].format(winner.name)) }
+        (winner.members + loser.members).map { it.player }.forEach { it.notify(Lang.PvP["war-end"].msgFormat(winner.name)) }
+        LegendGuild.guildController.save { winner }
+        LegendGuild.guildController.save { loser }
     }
 
     private fun drawWar(war: War) {
@@ -95,25 +100,34 @@ object PvPUI : UIFactoryPaginated {
 
     private fun updateInv(): List<Inventory> {
         inventories.clear()
-        var inv = createPage()
+        val inv = createPage()
         inventories.add(inv)
-        GuildManager.guildMap.forEach { g ->
-            if (inv.firstEmpty() == -1) {
-                inv = createPage()
-                inventories.add(inv)
-            }
-            val lore = listOf(
-                    "&e等級: Lv${g.currentLevel}",
-                    "&e人數: ${g.members.size}",
-                    "&a左鍵大型右鍵小型"
-            )
-            BukkitPlugin.plugin.debug("updating ${this::class} info for ${g.name}")
-            val item = UIManager.p.itemStack(Material.PAPER, display = "&b${g.name}", lore = lore)
-            val nbItem = NBTItem(item)
-            nbItem.setString("guild.name", g.name)
-            inv.addItem(nbItem.item)
-        }
+        BukkitPlugin.plugin.debug("updating ${this::class} info")
+        GuildManager.guildMap.forEach { g -> addGuild(g) }
         return inventories
+    }
+
+    fun addGuild(g: Guild) {
+        var inv = inventories.lastOrNull() ?: let {
+            BukkitPlugin.plugin.debug("pvp inventory is empty, creating new one now")
+            inventories.add(createPage())
+            return addGuild(g)
+        }
+        if (inv.firstEmpty() == -1) {
+            inv = createPage()
+            inventories.add(inv)
+        }
+        val lore = listOf(
+                "&e等級: Lv${g.currentLevel}",
+                "&e人數: ${g.members.size}",
+                "&a左鍵大型右鍵小型"
+        )
+        BukkitPlugin.plugin.debug("preparing to add ${g.name} to pvp ui")
+        val item = UIManager.p.itemStack(Material.PAPER, display = "&b${g.name}", lore = lore)
+        val nbItem = NBTItem(item)
+        nbItem.setString("guild.name", g.name)
+        inv.addItem(nbItem.item)
+
     }
 
     override fun getPaginatedUI(bPlayer: OfflinePlayer): List<Inventory> {
@@ -130,29 +144,53 @@ object PvPUI : UIFactoryPaginated {
         BukkitPlugin.plugin.debug("${this::class.simpleName} new page, so clear pageCache")
         return UIManager.p.createGUI(6, "&b宗門戰爭",
                 fills = mapOf(
-                        (6 row 2)..(6 row 8) to Clicker(ItemStack(Material.AIR)) { p, stack ->
+                        0..53 to Clicker(ItemStack(Material.AIR)) { p, stack ->
                             val sentGuild = p.guild ?: let {
                                 p.sendMessage(Lang["not-in-guild"])
                                 return@Clicker
                             }
-                            val name = NBTItem(stack).getString("guild.name") ?: return@Clicker
+                            if (warList.any { w -> sentGuild.name in listOf(w.g1.name, w.g2.name) }) {
+                                p.sendMessage(Lang.PvP["in-war"])
+                                return@Clicker
+                            }
+                            val name = NBTItem(stack).getString("guild.name") ?: kotlin.run {
+                                BukkitPlugin.plugin.debug("unknown guild name, skipped pvp")
+                                return@Clicker
+                            }
                             val small = when (click) {
                                 ClickType.RIGHT, ClickType.SHIFT_RIGHT -> true
                                 ClickType.LEFT, ClickType.SHIFT_LEFT -> false
-                                else -> return@Clicker
+                                else -> {
+                                    BukkitPlugin.plugin.debug("unknown click type, skipped pvp")
+                                    return@Clicker
+                                }
                             }
 
                             val targetGuild = LegendGuild.guildController.findById(name) ?: let {
-                                p.sendMessage(Lang["unknown-guild"].format(name))
+                                p.sendMessage(Lang["unknown-guild"].msgFormat(name))
                                 return@Clicker
                             }
 
-                            invites[sentGuild] = Invite(targetGuild, small)
-                            p.sendMessage(Lang.PvP["invite-sent"])
-                            targetGuild.members.filter { it.role.hasPower(GuildPlayer.Role.CO_ELDER) }.map { it.player }.forEach { off ->
-                                off.notify(Lang.PvP["get-invite"].format(sentGuild.name))
+                            if (sentGuild.name == targetGuild.name) {
+                                p.sendMessage(Lang.PvP["pvp-self"])
+                                return@Clicker
                             }
-                        }
+
+                            if (click.isShiftClick) {
+                                if (LegendGuild.pointsAPI.take(p.uniqueId, LegendGuild.config.war.forcePoints)) {
+                                    launchWar(sentGuild, targetGuild, small, true)
+                                }
+                            } else {
+                                p.sendMessage(Lang.PvP["invite-sent"])
+                                if (!invites.containsKey(sentGuild)) {
+                                    invites[sentGuild] = Invite(targetGuild, small)
+                                    targetGuild.members.filter { g -> g.role hasPower GuildPlayer.Role.CO_ELDER }.map { it.player }.forEach {
+                                        it.player?.tellPvPInvite()
+                                    }
+                                }
+                            }
+                        },
+                        (6 row 2)..(6 row 8) to Clicker(UIFactoryPaginated.decorate)
                 )
         ) {
             pageOperator

@@ -34,7 +34,7 @@ object ResourcesUI : UIFactory {
                 listOf(
                         "&c&o捐贈你鼠標拖帶的物品。",
                         "&e可捐贈道具及貢獻值獎勵如下:"
-                ) + items.map { "&b${it.key} &7- &6$${it.value}" }
+                ) + items.map { "&b${Lang.Item[it.key]} &7- &6$${it.value}" }
             }
     )
 

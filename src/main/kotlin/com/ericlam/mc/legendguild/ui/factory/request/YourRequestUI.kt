@@ -62,7 +62,7 @@ object YourRequestUI : UIFactory {
                             }
                             player.tellSuccess()
                             player.closeInventory()
-                            takerPlayer?.notify(Lang.Request["request-done"].format(player.name))
+                            takerPlayer?.notify(Lang.Request["request-done"].mFormat(player.name))
                             takerPlayer?.player?.closeInventory()
                             JobInfoUI.cooldown.remove(taker)
                         },
@@ -88,7 +88,7 @@ object YourRequestUI : UIFactory {
                             }
                             player.tellSuccess()
                             player.closeInventory()
-                            Bukkit.getOfflinePlayer(taker)?.notify(Lang.Request["request-cancel"].format(player.displayName))
+                            Bukkit.getOfflinePlayer(taker)?.notify(Lang.Request["request-cancel"].mFormat(player.displayName))
                             Bukkit.getOfflinePlayer(taker)?.player?.closeInventory()
                             JobInfoUI.cooldown.remove(taker)
                         }

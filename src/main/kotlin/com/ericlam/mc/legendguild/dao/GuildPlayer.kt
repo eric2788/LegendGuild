@@ -65,4 +65,12 @@ data class GuildPlayer(
         return contribution.takeUnless { it < price }?.let { contribution -= price }?.let { true } ?: false
     }
 
+    override fun hashCode(): Int {
+        return uuid.hashCode()
+    }
+
+    override fun equals(other: Any?): Boolean {
+        return (other as? GuildPlayer)?.let { it.uuid == this.uuid } ?: false
+    }
+
 }

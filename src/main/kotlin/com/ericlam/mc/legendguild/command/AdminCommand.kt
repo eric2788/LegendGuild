@@ -61,7 +61,7 @@ object AdminCommand : BukkitCommand(
                         return@BukkitCommand
                     }
                     if (target.guild != null) {
-                        commandSender.sendMessage(Lang["joined-guild"].format(target.name))
+                        commandSender.sendMessage(Lang["joined-guild"].mFormat(target.name))
                         return@BukkitCommand
                     }
                     target.joinGuild(guild.name)
@@ -89,7 +89,7 @@ object AdminCommand : BukkitCommand(
                         return@BukkitCommand
                     }
                     val num = strings[1].toIntOrNull() ?: run {
-                        commandSender.sendMessage(Lang["not-number"].format(strings[1]))
+                        commandSender.sendMessage(Lang["not-number"].mFormat(strings[1]))
                         return@BukkitCommand
                     }
                     val set = !(strings[1].startsWith("+") || num < 0)
@@ -115,7 +115,7 @@ object AdminCommand : BukkitCommand(
                         return@BukkitCommand
                     }
                     val num = strings[1].toDoubleOrNull() ?: run {
-                        commandSender.sendMessage(Lang["not-number"].format(strings[1]))
+                        commandSender.sendMessage(Lang["not-number"].mFormat(strings[1]))
                         return@BukkitCommand
                     }
                     val set = !(strings[1].startsWith("+") || num < 0)
@@ -141,7 +141,7 @@ object AdminCommand : BukkitCommand(
                         return@BukkitCommand
                     }
                     val num = strings[1].toDoubleOrNull() ?: run {
-                        commandSender.sendMessage(Lang["not-number"].format(strings[1]))
+                        commandSender.sendMessage(Lang["not-number"].mFormat(strings[1]))
                         return@BukkitCommand
                     }
                     val set = !(strings[1].startsWith("+") || num < 0)
@@ -171,7 +171,7 @@ object AdminCommand : BukkitCommand(
                         return@BukkitCommand
                     }
                     val num = strings[2].toIntOrNull() ?: run {
-                        commandSender.sendMessage(Lang["not-number"].format(strings[1]))
+                        commandSender.sendMessage(Lang["not-number"].mFormat(strings[1]))
                         return@BukkitCommand
                     }
                     val set = !(strings[1].startsWith("+") || num < 0)
@@ -197,7 +197,7 @@ object AdminCommand : BukkitCommand(
                         return@BukkitCommand
                     }
                     val num = strings[1].toIntOrNull() ?: run {
-                        commandSender.sendMessage(Lang["not-number"].format(strings[1]))
+                        commandSender.sendMessage(Lang["not-number"].mFormat(strings[1]))
                         return@BukkitCommand
                     }
                     val set = !(strings[1].startsWith("+") || num < 0)

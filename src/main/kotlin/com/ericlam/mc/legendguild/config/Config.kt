@@ -12,17 +12,25 @@ data class Config(
         val maxLevel: Int,
         val maxExp: String,
         val maxChar: Int,
-        val skillUpdate: String,
+        val skillValue: String,
         val dailyContribution: Contribution,
         val postResources: PostResources,
         val salaries: Map<GuildPlayer.Role, Double>,
         val default_salaries: Map<GuildPlayer.Role, Double>,
         val materials: Materials,
+        val war: War,
         val leaderUpdate: Long,
         val skills: Map<GuildSkill, UpgradeRequirement>,
         val questItems: Map<QuestType, Material>,
         val lossExp: String
 ) : ConfigFile() {
+
+
+    data class War(
+            val small: Int,
+            val big: Int,
+            val forcePoints: Int
+    )
 
     data class UpgradeRequirement(
             val money: Double,

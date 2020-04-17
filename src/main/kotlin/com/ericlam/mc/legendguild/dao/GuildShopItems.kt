@@ -15,4 +15,13 @@ data class GuildShopItems(
         val items: MutableMap<UUID, ShopItem> = mutableMapOf()
 ) : DataFile {
     data class ShopItem(val price: Int, val item: ItemStack, val owner: UUID)
+
+
+    override fun equals(other: Any?): Boolean {
+        return (other as? GuildShopItems)?.let { it.guild == this.guild } ?: false
+    }
+
+    override fun hashCode(): Int {
+        return guild.hashCode()
+    }
 }
