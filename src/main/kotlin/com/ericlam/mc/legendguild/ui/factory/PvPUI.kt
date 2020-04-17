@@ -120,7 +120,8 @@ object PvPUI : UIFactoryPaginated {
         val lore = listOf(
                 "&e等級: Lv${g.currentLevel}",
                 "&e人數: ${g.members.size}",
-                "&a左鍵大型右鍵小型"
+                "&a左鍵大型右鍵小型",
+                "&aShift click 以強制發動"
         )
         BukkitPlugin.plugin.debug("preparing to add ${g.name} to pvp ui")
         val item = UIManager.p.itemStack(Material.PAPER, display = "&b${g.name}", lore = lore)
@@ -179,6 +180,8 @@ object PvPUI : UIFactoryPaginated {
                             if (click.isShiftClick) {
                                 if (LegendGuild.pointsAPI.take(p.uniqueId, LegendGuild.config.war.forcePoints)) {
                                     launchWar(sentGuild, targetGuild, small, true)
+                                } else {
+                                    p.sendMessage(Lang["no-points"])
                                 }
                             } else {
                                 p.sendMessage(Lang.PvP["invite-sent"])
