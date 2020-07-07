@@ -1,6 +1,5 @@
 package com.ericlam.mc.legendguild
 
-import com.ericlam.mc.kotlib.bukkit.BukkitPlugin
 import com.ericlam.mc.legendguild.dao.Guild
 import com.ericlam.mc.legendguild.dao.GuildPlayer
 import com.ericlam.mc.legendguild.dao.GuildShopItems
@@ -43,9 +42,9 @@ object GuildManager {
     }
 
     operator fun get(uuid: UUID): Guild? {
-        BukkitPlugin.plugin.debug("GuildManager[uuid] findById($uuid)")
+        LegendGuild.debug("GuildManager[uuid] findById($uuid)")
         return LegendGuild.guildPlayerController.findById(uuid)?.guild?.let { this[it] }.also {
-            it ?: also { BukkitPlugin.plugin.debug("cannot find guild for $uuid") }
+            it ?: also { LegendGuild.debug("cannot find guild for $uuid") }
         }
     }
 
@@ -123,10 +122,10 @@ object GuildManager {
         if (!p.canGetSalary) return SalaryResponse.ALREADY_GET_TODAY
         else {
             val salary = LegendGuild.config.salaries[p.role] ?: return SalaryResponse.ROLE_NO_SALARIES
-            BukkitPlugin.plugin.debug("getting salary for ${player.name}: $$salary")
+            LegendGuild.debug("getting salary for ${player.name}: $$salary")
             return if (LegendGuild.economy.depositPlayer(player, salary).transactionSuccess()) {
                 g.resource.money -= salary
-                BukkitPlugin.plugin.debug("now guild have money: $${g.resource.money}")
+                LegendGuild.debug("now guild have money: $${g.resource.money}")
                 p.setLastSalary()
                 if (g.resource.money < 0) SalaryResponse.SUCCESS_NEGATIVE else SalaryResponse.SUCCESS
             } else {

@@ -1,6 +1,6 @@
 package com.ericlam.mc.legendguild.ui.factory
 
-import com.ericlam.mc.kotlib.bukkit.BukkitPlugin
+import com.ericlam.mc.legendguild.LegendGuild
 import com.ericlam.mc.legendguild.dao.Guild
 import org.bukkit.OfflinePlayer
 import org.bukkit.inventory.Inventory
@@ -20,7 +20,7 @@ interface UIFactory {
 
 
     fun debugDetails() {
-        BukkitPlugin.plugin.debug("total details for invCaches: ${invCaches.map { (g, l) -> "${g.name} => ${l.map { it?.toString() ?: "null" }}}" }}")
-        BukkitPlugin.plugin.debug("total details for guildInvCaches: ${guildInvCaches.map { (g, l) -> "${g.name} => ${l.map { it?.toString() ?: "null" }}}" }}")
+        LegendGuild.debug("total details for invCaches: ${invCaches.map { (g, l) -> "${g.name} => ${l.map { it?.toString() ?: "null" }}}" }}")
+        LegendGuild.debug("total details for guildInvCaches: ${guildInvCaches.map { (g, l) -> "${g.name} => ${l.map { it?.toString() ?: "null" }}}" }}")
     }
 }

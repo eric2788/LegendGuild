@@ -1,7 +1,6 @@
 package com.ericlam.mc.legendguild.ui.factory.request
 
 import com.ericlam.mc.kotlib.Clicker
-import com.ericlam.mc.kotlib.bukkit.BukkitPlugin
 import com.ericlam.mc.kotlib.translateColorCode
 import com.ericlam.mc.legendguild.*
 import com.ericlam.mc.legendguild.ui.UIManager
@@ -28,7 +27,7 @@ object YourRequestUI : UIFactory {
                 mapOf(
                         7 to Clicker(finish) { player, _ ->
                             if (checkAdmin.contains(player.uniqueId)) {
-                                BukkitPlugin.plugin.debug("admin check for ${player.name}")
+                                LegendGuild.debug("admin check for ${player.name}")
                                 isCancelled = true
                                 return@Clicker
                             }
@@ -68,7 +67,7 @@ object YourRequestUI : UIFactory {
                         },
                         8 to Clicker(delete) { player, _ ->
                             if (checkAdmin.contains(player.uniqueId)) {
-                                BukkitPlugin.plugin.debug("admin check for ${player.name}")
+                                LegendGuild.debug("admin check for ${player.name}")
                                 isCancelled = true
                                 return@Clicker
                             }

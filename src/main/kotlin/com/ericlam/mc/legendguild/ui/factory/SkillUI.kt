@@ -1,7 +1,6 @@
 package com.ericlam.mc.legendguild.ui.factory
 
 import com.ericlam.mc.kotlib.Clicker
-import com.ericlam.mc.kotlib.bukkit.BukkitPlugin
 import com.ericlam.mc.legendguild.*
 import com.ericlam.mc.legendguild.dao.Guild
 import com.ericlam.mc.legendguild.ui.UIManager
@@ -36,7 +35,7 @@ object SkillUI : UIFactory {
     override fun updateGInfo(guild: Guild, inventory: Inventory) {
         val items = guild.currentSkills.map { (skill, level) ->
             val requirement = LegendGuild.config.skills[skill] ?: let {
-                BukkitPlugin.plugin.warning("無法找到 技能 ${skill.ch} 的升級需求！ 已略過。")
+                LegendGuild.warning("無法找到 技能 ${skill.ch} 的升級需求！ 已略過。")
                 return@map UIManager.p.itemStack(Material.BARRIER, display = "&c找不到升級需求: ${skill.ch}")
             }
             UIManager.p.itemStack(

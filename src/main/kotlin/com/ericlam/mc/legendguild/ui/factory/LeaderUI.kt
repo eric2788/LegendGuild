@@ -1,7 +1,6 @@
 package com.ericlam.mc.legendguild.ui.factory
 
 import com.ericlam.mc.kotlib.Clicker
-import com.ericlam.mc.kotlib.bukkit.BukkitPlugin
 import com.ericlam.mc.kotlib.row
 import com.ericlam.mc.legendguild.*
 import com.ericlam.mc.legendguild.dao.GuildPlayer
@@ -28,7 +27,7 @@ object LeaderUI : UIFactoryPaginated {
         inventories.clear()
         var inv = createPage()
         inventories.add(inv)
-        BukkitPlugin.plugin.debug("updating ${this::class} info")
+        LegendGuild.debug("updating ${this::class} info")
         GuildManager.leaderBoard.forEach { guild ->
             if (inv.firstEmpty() == -1) {
                 inv = createPage()
@@ -51,9 +50,9 @@ object LeaderUI : UIFactoryPaginated {
 
     override val pageCache: MutableMap<OfflinePlayer, ListIterator<Inventory>> = ConcurrentHashMap()
     override fun createPage(): Inventory {
-        BukkitPlugin.plugin.debug("Creating new page of ${this::class.simpleName}")
+        LegendGuild.debug("Creating new page of ${this::class.simpleName}")
         pageCache.clear()
-        BukkitPlugin.plugin.debug("${this::class.simpleName} new page, so clear pageCache")
+        LegendGuild.debug("${this::class.simpleName} new page, so clear pageCache")
         return UIManager.p.createGUI(6, "&b宗門排行榜",
                 fills = mapOf((6 row 2)..(6 row 8) to Clicker(UIFactoryPaginated.decorate))
         ) {

@@ -49,7 +49,7 @@ object PromoteUI : UIFactoryPaginated {
                         this.role = newRole
                     }
                     UIManager.p.schedule {
-                        p.player?.refreshPermissions(LegendGuild.attachment(p.player))
+                        p.player?.refreshPermissions(LegendGuild.attachment(p.player), LegendGuild.permission)
                         p.player?.closeInventory()
                         UIManager.clearCache(p)
                         it.player.tellSuccess()
@@ -123,7 +123,7 @@ object PromoteUI : UIFactoryPaginated {
             return
         }
         val inventories = paginatedCaches[g] ?: let {
-            BukkitPlugin.plugin.debug("empty inventory list, creating new one")
+            LegendGuild.debug("empty inventory list, creating new one")
             val i = getPaginatedUI(player)
             if (i.isNotEmpty()) {
                 addPlayer(player)

@@ -1,7 +1,6 @@
 package com.ericlam.mc.legendguild.ui.factory
 
 import com.ericlam.mc.kotlib.Clicker
-import com.ericlam.mc.kotlib.bukkit.BukkitPlugin
 import com.ericlam.mc.kotlib.msgFormat
 import com.ericlam.mc.kotlib.row
 import com.ericlam.mc.legendguild.*
@@ -102,14 +101,14 @@ object PvPUI : UIFactoryPaginated {
         inventories.clear()
         val inv = createPage()
         inventories.add(inv)
-        BukkitPlugin.plugin.debug("updating ${this::class} info")
+        LegendGuild.debug("updating ${this::class} info")
         GuildManager.guildMap.forEach { g -> addGuild(g) }
         return inventories
     }
 
     fun addGuild(g: Guild) {
         var inv = inventories.lastOrNull() ?: let {
-            BukkitPlugin.plugin.debug("pvp inventory is empty, creating new one now")
+            LegendGuild.debug("pvp inventory is empty, creating new one now")
             inventories.add(createPage())
             return addGuild(g)
         }
@@ -123,7 +122,7 @@ object PvPUI : UIFactoryPaginated {
                 "&a左鍵大型右鍵小型",
                 "&aShift click 以強制發動"
         )
-        BukkitPlugin.plugin.debug("preparing to add ${g.name} to pvp ui")
+        LegendGuild.debug("preparing to add ${g.name} to pvp ui")
         val item = UIManager.p.itemStack(Material.PAPER, display = "&b${g.name}", lore = lore)
         val nbItem = NBTItem(item)
         nbItem.setString("guild.name", g.name)
@@ -133,16 +132,16 @@ object PvPUI : UIFactoryPaginated {
 
     override fun getPaginatedUI(bPlayer: OfflinePlayer): List<Inventory> {
         if (inventories.isEmpty()) updateInv()
-        BukkitPlugin.plugin.debug("pvp inventory list current size: ${inventories.size}")
+        LegendGuild.debug("pvp inventory list current size: ${inventories.size}")
         return inventories
     }
 
     override val pageCache: MutableMap<OfflinePlayer, ListIterator<Inventory>> = mutableMapOf()
 
     override fun createPage(): Inventory {
-        BukkitPlugin.plugin.debug("Creating new page of ${this::class.simpleName}")
+        LegendGuild.debug("Creating new page of ${this::class.simpleName}")
         pageCache.clear()
-        BukkitPlugin.plugin.debug("${this::class.simpleName} new page, so clear pageCache")
+        LegendGuild.debug("${this::class.simpleName} new page, so clear pageCache")
         return UIManager.p.createGUI(6, "&b宗門戰爭",
                 fills = mapOf(
                         0..53 to Clicker(ItemStack(Material.AIR)) { p, stack ->
@@ -155,14 +154,14 @@ object PvPUI : UIFactoryPaginated {
                                 return@Clicker
                             }
                             val name = NBTItem(stack).getString("guild.name") ?: kotlin.run {
-                                BukkitPlugin.plugin.debug("unknown guild name, skipped pvp")
+                                LegendGuild.debug("unknown guild name, skipped pvp")
                                 return@Clicker
                             }
                             val small = when (click) {
                                 ClickType.RIGHT, ClickType.SHIFT_RIGHT -> true
                                 ClickType.LEFT, ClickType.SHIFT_LEFT -> false
                                 else -> {
-                                    BukkitPlugin.plugin.debug("unknown click type, skipped pvp")
+                                    LegendGuild.debug("unknown click type, skipped pvp")
                                     return@Clicker
                                 }
                             }

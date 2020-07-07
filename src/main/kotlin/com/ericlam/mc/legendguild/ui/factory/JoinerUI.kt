@@ -1,7 +1,6 @@
 package com.ericlam.mc.legendguild.ui.factory
 
 import com.ericlam.mc.kotlib.Clicker
-import com.ericlam.mc.kotlib.bukkit.BukkitPlugin
 import com.ericlam.mc.kotlib.row
 import com.ericlam.mc.legendguild.*
 import com.ericlam.mc.legendguild.dao.Guild
@@ -27,7 +26,7 @@ object JoinerUI : UIFactoryPaginated {
     }
 
     override fun createPage(): Inventory {
-        BukkitPlugin.plugin.debug("Creating new page of ${this::class.simpleName}")
+        LegendGuild.debug("Creating new page of ${this::class.simpleName}")
         pageCache.clear()
         return UIManager.p.createGUI(
                 rows = 6, title = "&a申請者列表",
@@ -44,7 +43,7 @@ object JoinerUI : UIFactoryPaginated {
                                     }
 
                             val playerName = Bukkit.getOfflinePlayer(uuid).name ?: "[找不到名稱]"
-                            BukkitPlugin.plugin.debug("${player.name} just clicked a button for accepting $playerName !")
+                            LegendGuild.debug("${player.name} just clicked a button for accepting $playerName !")
                             when {
                                 isLeftClick -> {
                                     if (LegendGuild.guildPlayerController.findById(uuid) != null) {
@@ -52,13 +51,13 @@ object JoinerUI : UIFactoryPaginated {
                                         return@Clicker
                                     }
                                     val offline = Bukkit.getOfflinePlayer(uuid)
-                                    BukkitPlugin.plugin.debug("the accept of ${player.name} is left click")
+                                    LegendGuild.debug("the accept of ${player.name} is left click")
                                     offline.joinGuild(guild.name).also {
                                         offline.notify(Lang["joined-success"])
                                     }
                                 }
                                 isRightClick -> {
-                                    BukkitPlugin.plugin.debug("the accept of ${player.name} is right click")
+                                    LegendGuild.debug("the accept of ${player.name} is right click")
                                     player.tellSuccess()
                                 }
                                 else -> {
@@ -79,21 +78,21 @@ object JoinerUI : UIFactoryPaginated {
     override fun addPlayer(player: OfflinePlayer) {
         val inventories = paginatedCaches.keys.find { g -> g.wannaJoins.contains(player.uniqueId) }?.let { paginatedCaches[it] }
                 ?: let {
-                    BukkitPlugin.plugin.debug("joiner: cannot find any guild inventories, use getPaginatedUI method")
+                    LegendGuild.debug("joiner: cannot find any guild inventories, use getPaginatedUI method")
                     val i = getPaginatedUI(player)
                     if (i.isNotEmpty()) {
                         addPlayer(player)
                         return
                     } else {
-                        BukkitPlugin.plugin.debug("joiner inventory for ${player.name} is empty")
+                        LegendGuild.debug("joiner inventory for ${player.name} is empty")
                         return
                     }
                 }
         var inv = inventories.lastOrNull() ?: let {
-            BukkitPlugin.plugin.debug("joiner inventories is empty")
+            LegendGuild.debug("joiner inventories is empty")
             return
         }
-        BukkitPlugin.plugin.debug("${this::class.simpleName} adding player ${player.name}")
+        LegendGuild.debug("${this::class.simpleName} adding player ${player.name}")
         while (inv.firstEmpty() == -1) {
             inv = createPage()
             inventories.add(inv)
@@ -103,10 +102,10 @@ object JoinerUI : UIFactoryPaginated {
 
     override fun getPaginatedUI(bPlayer: OfflinePlayer): List<Inventory> {
         val guild = bPlayer.guild ?: return emptyList()
-        BukkitPlugin.plugin.debug("joiner current paginatedCaches size: ${paginatedCaches.size}")
-        BukkitPlugin.plugin.debug("joiner current paginatedCaches details: ${paginatedCaches.map { "${it.key.name} => ${it.value.size}" }}")
+        LegendGuild.debug("joiner current paginatedCaches size: ${paginatedCaches.size}")
+        LegendGuild.debug("joiner current paginatedCaches details: ${paginatedCaches.map { "${it.key.name} => ${it.value.size}" }}")
         return paginatedCaches[guild] ?: let {
-            BukkitPlugin.plugin.debug("initializing joiner inventory list for ${guild.name}")
+            LegendGuild.debug("initializing joiner inventory list for ${guild.name}")
             val inventories = mutableListOf<Inventory>()
             var currentInv = createPage()
             inventories.add(currentInv)
@@ -120,7 +119,7 @@ object JoinerUI : UIFactoryPaginated {
                     inventories.add(currentInv)
                 }
             }
-            BukkitPlugin.plugin.debug("joiner inventory list initial size: ${inventories.size}")
+            LegendGuild.debug("joiner inventory list initial size: ${inventories.size}")
             inventories
         }.also {
             updatePaginatedInfo(guild, it)

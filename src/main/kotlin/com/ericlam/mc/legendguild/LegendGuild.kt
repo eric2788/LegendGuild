@@ -17,6 +17,7 @@ import com.ericlam.mc.legendguild.ui.factory.request.YourRequestUI
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import net.milkbowl.vault.economy.Economy
+import net.milkbowl.vault.permission.Permission
 import org.black_ixx.playerpoints.PlayerPoints
 import org.black_ixx.playerpoints.PlayerPointsAPI
 import org.bukkit.entity.Player
@@ -33,6 +34,8 @@ import java.util.concurrent.ConcurrentHashMap
 class LegendGuild : BukkitPlugin() {
 
     companion object {
+        lateinit var debug: (String) -> Unit
+        lateinit var warning: (String) -> Unit
         private val attachMap: MutableMap<UUID, PermissionAttachment> = ConcurrentHashMap()
         fun attachment(player: Player): PermissionAttachment = attachMap[player.uniqueId]
                 ?: player.addAttachment(plugin).also { attachMap[player.uniqueId] = it }
@@ -41,6 +44,7 @@ class LegendGuild : BukkitPlugin() {
         private lateinit var _lang: LangFile
         private lateinit var _item: Items
         private lateinit var _perms: Perms
+        private lateinit var _permission: Permission
         private lateinit var _econmony: Economy
         private lateinit var _gcontroller: GuildController
         private lateinit var _gpcontroller: GuildPlayerController
@@ -55,6 +59,8 @@ class LegendGuild : BukkitPlugin() {
             get() = _item
         val perms: Perms
             get() = _perms
+        val permission: Permission
+            get() = _permission
         val economy: Economy
             get() = _econmony
         val guildController: GuildController
@@ -86,11 +92,15 @@ class LegendGuild : BukkitPlugin() {
         _gpcontroller = manager.getDao(kClassOf())
         _gsicontroller = manager.getDao(kClassOf())
         _qpcontroller = manager.getDao(kClassOf())
-        val rsp = server.servicesManager.getRegistration(Economy::class.java)
-        _econmony = rsp?.provider ?: throw IllegalStateException("找不到有效的經濟插件")
+        val econRsp = server.servicesManager.getRegistration(Economy::class.java)
+        _econmony = econRsp?.provider ?: throw IllegalStateException("找不到有效的經濟插件")
+        val permRsp = server.servicesManager.getRegistration(Permission::class.java)
+        _permission = permRsp?.provider ?: throw IllegalStateException("找不到有效的權限插件")
         _pointsApi = getPlugin(PlayerPoints::class.java).api
         registerListeners()
         registerCmd(GuildCommand)
+        debug = ::debug
+        warning = ::warning
     }
 
 
@@ -122,7 +132,7 @@ class LegendGuild : BukkitPlugin() {
         listen<PlayerJoinEvent> {
             val attch = attachMap[it.player.uniqueId] ?: it.player.addAttachment(this)
             val player = it.player
-            player.refreshPermissions(attch)
+            player.refreshPermissions(attch, permission)
             attachMap[player.uniqueId] = attch
             if (!skinCache.contains(player.uniqueId)) {
                 GlobalScope.launch {

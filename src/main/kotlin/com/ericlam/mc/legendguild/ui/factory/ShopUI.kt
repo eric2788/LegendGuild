@@ -1,7 +1,6 @@
 package com.ericlam.mc.legendguild.ui.factory
 
 import com.ericlam.mc.kotlib.Clicker
-import com.ericlam.mc.kotlib.bukkit.BukkitPlugin
 import com.ericlam.mc.kotlib.row
 import com.ericlam.mc.legendguild.*
 import com.ericlam.mc.legendguild.dao.Guild
@@ -29,8 +28,8 @@ object ShopUI : UIFactoryPaginated {
         val guild = bPlayer.guild ?: return emptyList()
         return paginatedCaches[guild] ?: let {
             val shop = LegendGuild.guildShopController.findById(guild.name) ?: return emptyList()
-            BukkitPlugin.plugin.debug("initializing shop inventory list for ${guild.name}")
-            BukkitPlugin.plugin.debug("shop current paginatedCaches details: ${paginatedCaches.map { "${it.key.name} => ${it.value.flatMap { i -> i.contents.toList() }.map { s -> s.toString() }}" }}")
+            LegendGuild.debug("initializing shop inventory list for ${guild.name}")
+            LegendGuild.debug("shop current paginatedCaches details: ${paginatedCaches.map { "${it.key.name} => ${it.value.flatMap { i -> i.contents.toList() }.map { s -> s.toString() }}" }}")
             val inventories = mutableListOf<Inventory>()
             var currentInv = createPage()
             inventories.add(currentInv)
@@ -44,7 +43,7 @@ object ShopUI : UIFactoryPaginated {
                     inventories.add(currentInv)
                 }
             }
-            BukkitPlugin.plugin.debug("shop inventory list initial size: ${inventories.size}")
+            LegendGuild.debug("shop inventory list initial size: ${inventories.size}")
             inventories
         }.also {
             updatePaginatedInfo(guild, it)
@@ -54,10 +53,10 @@ object ShopUI : UIFactoryPaginated {
 
     fun addProduct(p: OfflinePlayer, item: ItemStack) {
         val inventories = paginatedCaches[p.guild] ?: let {
-            BukkitPlugin.plugin.debug("cannot find any shopUI pages, creating one")
+            LegendGuild.debug("cannot find any shopUI pages, creating one")
             val i = getPaginatedUI(p)
             if (i.isNotEmpty()) {
-                BukkitPlugin.plugin.debug("create success, using recursive method")
+                LegendGuild.debug("create success, using recursive method")
                 addProduct(p, item)
             }
             return
@@ -67,7 +66,7 @@ object ShopUI : UIFactoryPaginated {
             inv = createPage()
             inventories.add(inv)
         }
-        BukkitPlugin.plugin.debug("preparing to add item $item")
+        LegendGuild.debug("preparing to add item $item")
         inv.addItem(item)
     }
 
@@ -76,23 +75,23 @@ object ShopUI : UIFactoryPaginated {
     override val paginatedCaches: MutableMap<Guild, MutableList<Inventory>> = ConcurrentHashMap()
 
     override fun createPage(): Inventory {
-        BukkitPlugin.plugin.debug("Creating new page of ${this::class.simpleName}")
+        LegendGuild.debug("Creating new page of ${this::class.simpleName}")
         pageCache.clear()
-        BukkitPlugin.plugin.debug("${this::class.simpleName} new page, so clear pageCache")
+        LegendGuild.debug("${this::class.simpleName} new page, so clear pageCache")
         return UIManager.p.createGUI(
                 rows = 6, title = "&a商店列表",
                 fills = mapOf(
                         0..53 to Clicker(UIManager.p.itemStack(Material.AIR)) { player, stack ->
                             val id = NBTItem(stack).getString("guild.shop")?.let {
-                                BukkitPlugin.plugin.debug("clicked item $it, casting to UUID")
+                                LegendGuild.debug("clicked item $it, casting to UUID")
                                 UUID.fromString(it)
                             }
                             val operation = adminOperate[player.uniqueId]
-                            BukkitPlugin.plugin.debug("Player clicked operation: $operation")
+                            LegendGuild.debug("Player clicked operation: $operation")
                             when (operation) {
                                 Operation.SET_BANK -> {
-                                    BukkitPlugin.plugin.debug("admin clicked ShopUI.")
-                                    BukkitPlugin.plugin.debug("admin operation: remove product")
+                                    LegendGuild.debug("admin clicked ShopUI.")
+                                    LegendGuild.debug("admin operation: remove product")
                                     clickedInventory?.remove(stack)
                                     if (player.inventory.addItem(stack).isNotEmpty()) {
                                         player.world.dropItem(player.location, stack)
@@ -105,12 +104,12 @@ object ShopUI : UIFactoryPaginated {
                                     clickedInventory?.remove(stack)
                                 }
                                 Operation.BANK -> {
-                                    BukkitPlugin.plugin.debug("admin clicked ShopUI.")
-                                    BukkitPlugin.plugin.debug("admin operation: checking product")
+                                    LegendGuild.debug("admin clicked ShopUI.")
+                                    LegendGuild.debug("admin operation: checking product")
                                     isCancelled = true
                                 }
                                 else -> {
-                                    BukkitPlugin.plugin.debug("player clicked ShopUI.")
+                                    LegendGuild.debug("player clicked ShopUI.")
                                     val res = GuildManager.buyProduct(player, stack)
                                     player.sendMessage(res.first.message)
                                     if (res.first == GuildManager.ShopResponse.BUY_SUCCESS) {

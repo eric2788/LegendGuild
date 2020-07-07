@@ -1,7 +1,6 @@
 package com.ericlam.mc.legendguild.ui.factory
 
 import com.ericlam.mc.kotlib.Clicker
-import com.ericlam.mc.kotlib.bukkit.BukkitPlugin
 import com.ericlam.mc.kotlib.row
 import com.ericlam.mc.legendguild.*
 import com.ericlam.mc.legendguild.dao.GuildPlayer
@@ -10,6 +9,7 @@ import de.tr7zw.nbtapi.NBTItem
 import org.bukkit.Material
 import org.bukkit.OfflinePlayer
 import org.bukkit.inventory.Inventory
+import org.bukkit.inventory.ItemStack
 import java.util.*
 import java.util.concurrent.TimeUnit
 
@@ -55,15 +55,15 @@ object JoinUI : UIFactoryPaginated {
     override val pageCache: MutableMap<OfflinePlayer, ListIterator<Inventory>> = mutableMapOf()
 
     override fun createPage(): Inventory {
-        BukkitPlugin.plugin.debug("Creating new page of ${this::class.simpleName}")
+        LegendGuild.debug("Creating new page of ${this::class.simpleName}")
         pageCache.clear()
-        BukkitPlugin.plugin.debug("${this::class.simpleName} new page, so clear pageCache")
+        LegendGuild.debug("${this::class.simpleName} new page, so clear pageCache")
         return UIManager.p.createGUI(
                 rows = 6, title = "&a宗門列表一覽 (三分鐘更新一次)",
                 fills = mapOf(
-                        0..53 to Clicker(UIManager.p.itemStack(Material.AIR)) { player, stack ->
-                            val guild = NBTItem(stack).getString("guild.join") ?: return@Clicker
-                            BukkitPlugin.plugin.debug("${player.name} just clicked a button for joining $guild !")
+                        0..53 to Clicker(UIManager.p.itemStack(Material.AIR)) { player, stack: ItemStack? ->
+                            val guild = stack?.let { NBTItem(it).getString("guild.join") } ?: return@Clicker
+                            LegendGuild.debug("${player.name} just clicked a button for joining $guild !")
                             val res = player.join(guild)
                             player.sendMessage(Lang[res.path].mFormat(guild))
                         },

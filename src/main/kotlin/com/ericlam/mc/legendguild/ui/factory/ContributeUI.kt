@@ -1,7 +1,6 @@
 package com.ericlam.mc.legendguild.ui.factory
 
 import com.ericlam.mc.kotlib.Clicker
-import com.ericlam.mc.kotlib.bukkit.BukkitPlugin
 import com.ericlam.mc.kotlib.not
 import com.ericlam.mc.kotlib.row
 import com.ericlam.mc.legendguild.GuildManager
@@ -74,7 +73,7 @@ object ContributeUI : UIFactory {
                 material = Material.EMERALD,
                 display = "&b你的貢獻值: ${gp.contribution}"
         )
-        BukkitPlugin.plugin.debug("updating ${this::class} info for ${player.name}")
+        LegendGuild.debug("updating ${this::class} info for ${player.name}")
         inventory.setItem(1 row 5, contribute)
     }
 

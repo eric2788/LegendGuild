@@ -1,7 +1,6 @@
 package com.ericlam.mc.legendguild.ui.factory
 
 import com.ericlam.mc.kotlib.Clicker
-import com.ericlam.mc.kotlib.bukkit.BukkitPlugin
 import com.ericlam.mc.kotlib.row
 import com.ericlam.mc.legendguild.GuildManager
 import com.ericlam.mc.legendguild.Lang
@@ -85,7 +84,7 @@ object ResourcesUI : UIFactory {
                         "&e道具資源:"
                 ) + guild.resource.items.map { "${Lang.Item[it.key]}: ${it.value} 個" }.toList()
         )
-        BukkitPlugin.plugin.debug("updating ${this::class} info for ${guild.name}")
+        LegendGuild.debug("updating ${this::class} info for ${guild.name}")
         inventory.setItem(1 row 5, info)
     }
 }

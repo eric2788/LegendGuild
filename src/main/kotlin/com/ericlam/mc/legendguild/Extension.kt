@@ -1,7 +1,6 @@
 package com.ericlam.mc.legendguild
 
 import com.ericlam.mc.kotlib.bukkit.BukkitPlugin
-import com.ericlam.mc.kotlib.catch
 import com.ericlam.mc.kotlib.msgFormat
 import com.ericlam.mc.kotlib.not
 import com.ericlam.mc.kotlib.translateColorCode
@@ -27,6 +26,7 @@ import net.md_5.bungee.api.chat.ClickEvent
 import net.md_5.bungee.api.chat.ComponentBuilder
 import net.md_5.bungee.api.chat.HoverEvent
 import net.md_5.bungee.api.chat.TextComponent
+import net.milkbowl.vault.permission.Permission
 import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.OfflinePlayer
@@ -37,6 +37,7 @@ import org.bukkit.entity.Projectile
 import org.bukkit.entity.TNTPrimed
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.ItemMeta
+import org.bukkit.inventory.meta.SkullMeta
 import org.bukkit.permissions.PermissionAttachment
 import java.io.IOException
 import java.net.HttpURLConnection
@@ -76,10 +77,16 @@ fun String.toPlayer(): OfflinePlayer? {
     return Bukkit.getPlayerUniqueId(this)?.let { Bukkit.getOfflinePlayer(it) }
 }
 
-fun Player.refreshPermissions(attachment: PermissionAttachment) {
-    attachment.permissions.filter { it.key.startsWith("guild.") }.forEach { p -> attachment.unsetPermission(p.key) }
+fun Player.refreshPermissions(attachment: PermissionAttachment, perm: Permission) {
+    attachment.permissions.filter { it.key.startsWith("guild.") }.forEach { p ->
+        run {
+            attachment.unsetPermission(p.key)
+            perm.playerRemove(this, p.key)
+        }
+    }
     this.guildPlayer?.role?.permissions?.forEach {
         attachment.setPermission(it, true)
+        perm.playerAdd(this, it)
     }
 }
 
@@ -106,8 +113,8 @@ val GuildPlayer.Role.permissions: List<String>
 
 val OfflinePlayer.guildPlayer: GuildPlayer?
     get() = LegendGuild.guildPlayerController.findById(this.uniqueId).also {
-        it ?: BukkitPlugin.plugin.debug("cannot find $name in guild player")
-    }?.also { BukkitPlugin.plugin.debug("successfully find $name in guild player") }
+        it ?: LegendGuild.debug("cannot find $name in guild player")
+    }?.also { LegendGuild.debug("successfully find $name in guild player") }
 
 val OfflinePlayer.guild: Guild?
     get() = GuildManager[this.uniqueId]
@@ -140,13 +147,17 @@ fun OfflinePlayer.toSkull(lore: OfflinePlayer.() -> List<String> = { listOf() })
 fun ItemMeta.toSkullMeta(skin: String): ItemMeta {
     val profile = GameProfile(UUID.randomUUID(), null)
     profile.properties.put("textures", Property("textures", skin))
-    catch<Exception>({
-        Bukkit.getLogger().warning("Create Skull Item with skin ($skin) failed")
-    }) {
+    if (this !is SkullMeta) {
+        Bukkit.getLogger().warning("This item ${this.displayName} is not skull meta!")
+        return this
+    }
+    try {
         this::class.java.getDeclaredField("profile").also {
             it.isAccessible = true
             it.set(this, profile)
         }
+    } catch (e: Exception) {
+        Bukkit.getLogger().warning("Create Skull Item with skin ($skin) failed ( ${e::class.simpleName} | ${e.message} )")
     }
     return this
 }
@@ -236,7 +247,7 @@ fun Player.addItem(stack: ItemStack, price: Int) {
         items[id] = shopItem
     }
     val nbtItem = shopItem.toShopItem(player.uniqueId, id)
-    BukkitPlugin.plugin.debug("prepare to add item into ShopUI: $nbtItem")
+    LegendGuild.debug("prepare to add item into ShopUI: $nbtItem")
     ShopUI.addProduct(this, nbtItem.item)
     this.tellSuccess()
     player.inventory.itemInMainHand = null
@@ -252,7 +263,7 @@ fun GuildShopItems.ShopItem.toShopItem(uniqueId: UUID, id: UUID): NBTItem {
             "&e擁有人: &f$name",
             "&e價格: &f$price 貢獻值"
     ).map { it.translateColorCode() }
-    BukkitPlugin.plugin.debug("$name uploaded an item $id with price $price")
+    LegendGuild.debug("$name uploaded an item $id with price $price")
     val item = nbtItem.item
     item.itemMeta?.run {
         this.lore = (item.lore ?: emptyList()) + desp
@@ -310,7 +321,7 @@ private val OfflinePlayer.skullItem: ItemStack
     }
 
 suspend fun OfflinePlayer.toSkinValue(): String {
-    return withContext(Dispatchers.Default) { httpGet("https://sessionserver.mojang.com/session/minecraft/profile/${uniqueId.toString().replace("-", "")}") }
+    return withContext(Dispatchers.Default) { httpGet("https://sessionserver.mojang.com/session/minecraft/profile/${uniqueId.toString().replace("-".toRegex(), "")}") }
 }
 
 fun OfflinePlayer.notify(msg: String) {
@@ -323,14 +334,14 @@ fun OfflinePlayer.notify(msg: String) {
 }
 
 fun Player.tellInvite() {
-    BukkitPlugin.plugin.debug("tell invite to $name")
+    LegendGuild.debug("tell invite to $name")
     GuildManager.guildMap.filter { g -> g.invites.contains(this.uniqueId) }.forEach { g ->
         this.sendMessage(Lang["invited"].mFormat(g.name))
         val yes = ComponentBuilder("答應請求").color(ChatColor.GREEN).underlined(true).event(ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/guild response accept ${g.name}")).event(HoverEvent(HoverEvent.Action.SHOW_TEXT, TextComponent.fromLegacyText("點擊以選擇")))
         val no = ComponentBuilder("拒絕請求").color(ChatColor.RED).underlined(true).event(ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/guild response decline ${g.name}")).event(HoverEvent(HoverEvent.Action.SHOW_TEXT, TextComponent.fromLegacyText("點擊以選擇")))
         val text = ComponentBuilder("[").color(ChatColor.GRAY).append(yes.create()).color(ChatColor.GRAY).append("|").append(no.create()).color(ChatColor.GRAY).append("]").create()
         this.spigot().sendMessage(*text)
-        BukkitPlugin.plugin.debug("tell invite to $name for joining guild ${g.name}")
+        LegendGuild.debug("tell invite to $name for joining guild ${g.name}")
     }
 }
 
@@ -343,7 +354,7 @@ fun Player.tellPvPInvite() {
         val no = ComponentBuilder("拒絕請求").color(ChatColor.RED).underlined(true).event(ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/guild pvp decline ${g.name}")).event(HoverEvent(HoverEvent.Action.SHOW_TEXT, TextComponent.fromLegacyText("點擊以選擇")))
         val text = ComponentBuilder("[").color(ChatColor.GRAY).append(yes.create()).color(ChatColor.GRAY).append("|").append(no.create()).color(ChatColor.GRAY).append("]").create()
         this.spigot().sendMessage(*text)
-        BukkitPlugin.plugin.debug("tell pvp invite to $name for pvp with guild ${g.name}")
+        LegendGuild.debug("tell pvp invite to $name for pvp with guild ${g.name}")
     }
 }
 
@@ -351,10 +362,10 @@ val queue: MutableMap<UUID, MutableSet<String>> = ConcurrentHashMap()
 
 
 fun OfflinePlayer.joinGuild(gName: String) {
-    BukkitPlugin.plugin.debug("${this.name} prepare to join guild $gName")
+    LegendGuild.debug("${this.name} prepare to join guild $gName")
     val con = LegendGuild.guildPlayerController
     if (LegendGuild.guildController.findById(gName) == null) {
-        BukkitPlugin.plugin.debug("${this.name} already has guild, so skipped")
+        LegendGuild.debug("${this.name} already has guild, so skipped")
         return
     }
     GlobalScope.async {
@@ -362,20 +373,20 @@ fun OfflinePlayer.joinGuild(gName: String) {
         con.save { GuildPlayer(uniqueId, name, gName, skin) }
     }.invokeOnCompletion {
         it?.printStackTrace()?.also {
-            BukkitPlugin.plugin.debug("error appeared, so failed")
+            LegendGuild.debug("error appeared, so failed")
             player?.tellFailed()
         }
                 ?: player?.tellSuccess().also {
-                    BukkitPlugin.plugin.debug("successfully save $name to guild $gName")
+                    LegendGuild.debug("successfully save $name to guild $gName")
                     LegendGuild.guildController.update(gName) {
                         wannaJoins.remove(uniqueId)
                     }
                     val off = this
                     UIManager.p.schedule { // run in main thread
-                        BukkitPlugin.plugin.debug("preparing to add $name in PromoteUI")
+                        LegendGuild.debug("preparing to add $name in PromoteUI")
                         PromoteUI.addPlayer(off)
                         player?.closeInventory()
-                        off.player?.refreshPermissions(LegendGuild.attachment(off.player))
+                        off.player?.refreshPermissions(LegendGuild.attachment(off.player), LegendGuild.permission)
                     }
                 }
     }
@@ -467,6 +478,10 @@ fun httpGet(urlStr: String): String {
             requestMethod = "GET"
             val gson = Gson()
             val map = gson.fromJson(inputStream.bufferedReader(), Map::class.java)
+            if (map == null) {
+                LegendGuild.warning("Cannot retrieve skin for $urlStr")
+                return@with steveSkin
+            }
             return@with ((map["properties"] as List<*>)[0] as Map<*, *>)["value"] as String
         }
     } catch (e: IOException) {

@@ -1,7 +1,6 @@
 package com.ericlam.mc.legendguild.ui.factory
 
 import com.ericlam.mc.kotlib.Clicker
-import com.ericlam.mc.kotlib.bukkit.BukkitPlugin
 import com.ericlam.mc.legendguild.*
 import com.ericlam.mc.legendguild.dao.QuestPlayer
 import com.ericlam.mc.legendguild.dao.QuestType
@@ -31,7 +30,7 @@ object QuestUI : UIFactory {
     override fun getUI(bPlayer: OfflinePlayer): Inventory? {
         val questPlayer = LegendGuild.questPlayerController.findById(bPlayer.uniqueId)
         val quest = questPlayer?.item ?: let {
-            BukkitPlugin.plugin.debug("quest item for ${bPlayer.name} is null, removing cache")
+            LegendGuild.debug("quest item for ${bPlayer.name} is null, removing cache")
             invCaches.remove(bPlayer)
             return selectUI
         }
@@ -68,7 +67,7 @@ object QuestUI : UIFactory {
 
     override fun updateInfo(player: OfflinePlayer, inventory: Inventory) {
         val quest = LegendGuild.questPlayerController.findById(player.uniqueId)?.item ?: let {
-            BukkitPlugin.plugin.debug("quest item for ${player.name} is null, removing cache")
+            LegendGuild.debug("quest item for ${player.name} is null, removing cache")
             invCaches.remove(player)
             return
         }
@@ -79,7 +78,7 @@ object QuestUI : UIFactory {
                         "&b還有 ${(quest.progress.second - quest.progress.first).coerceAtLeast(0)} 隻怪物需要擊殺。",
                         "&7任務完成: ${if (quest.matchGoal) "&a是" else "&c否"}"
                 ))
-        BukkitPlugin.plugin.debug("updating ${this::class} info for ${player.name}")
+        LegendGuild.debug("updating ${this::class} info for ${player.name}")
         inventory.setItem(1, progress)
     }
 }

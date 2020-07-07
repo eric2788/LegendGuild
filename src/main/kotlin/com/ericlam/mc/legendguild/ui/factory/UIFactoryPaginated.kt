@@ -1,13 +1,9 @@
 package com.ericlam.mc.legendguild.ui.factory
 
 import com.ericlam.mc.kotlib.Clicker
-import com.ericlam.mc.kotlib.bukkit.BukkitPlugin
 import com.ericlam.mc.kotlib.row
-import com.ericlam.mc.legendguild.Lang
+import com.ericlam.mc.legendguild.*
 import com.ericlam.mc.legendguild.dao.Guild
-import com.ericlam.mc.legendguild.materialGlassPane
-import com.ericlam.mc.legendguild.materialHead
-import com.ericlam.mc.legendguild.toSkullMeta
 import com.ericlam.mc.legendguild.ui.UIManager
 import de.tr7zw.nbtapi.NBTItem
 import org.bukkit.Material
@@ -24,15 +20,15 @@ interface UIFactoryPaginated : UIFactory {
 
     override fun getUI(bPlayer: OfflinePlayer): Inventory? {
         val ui = getPaginatedUI(bPlayer)
-        BukkitPlugin.plugin.debug("UI ${this::class.simpleName} size: ${ui.size}")
-        BukkitPlugin.plugin.debug("UI ${this::class.simpleName} firstPage exist: ${ui.firstOrNull() != null}")
+        LegendGuild.debug("UI ${this::class.simpleName} size: ${ui.size}")
+        LegendGuild.debug("UI ${this::class.simpleName} firstPage exist: ${ui.firstOrNull() != null}")
         debugDetails()
         return ui.firstOrNull()
     }
 
     fun getIterator(bPlayer: OfflinePlayer): ListIterator<Inventory> {
         return pageCache[bPlayer] ?: getPaginatedUI(bPlayer).toList().let {
-            BukkitPlugin.plugin.debug("iterator current size: ${it.size}")
+            LegendGuild.debug("iterator current size: ${it.size}")
             it.listIterator().also { iter ->
                 iter.next()
                 pageCache[bPlayer] = iter
@@ -49,7 +45,7 @@ interface UIFactoryPaginated : UIFactory {
 
     fun updatePaginatedInfo(guild: Guild, inventories: MutableList<Inventory>) {
         val invs = inventories.takeIf { it.isNotEmpty() } ?: return
-        BukkitPlugin.plugin.debug("updating ${this::class} paginated info for ${guild.name}")
+        LegendGuild.debug("updating ${this::class} paginated info for ${guild.name}")
         invs.takeIf { it.size > 1 }?.reduce { inv1, inv2 ->
             val iterator = inv2.iterator()
             while (inv1.firstEmpty() != -1 && iterator.hasNext()) {
@@ -60,7 +56,7 @@ interface UIFactoryPaginated : UIFactory {
         invs.replaceAll { inv ->
             inv.contents = inv.contents.filterNotNull()
                     .filter { it.type != Material.AIR }
-                    .filter { customFilter(guild, it).also { b -> BukkitPlugin.plugin.debug("$it customFilter not remove: $b") } }
+                    .filter { customFilter(guild, it).also { b -> LegendGuild.debug("$it customFilter not remove: $b") } }
                     .filter { !it.unmovable }
                     .toList().toTypedArray()
             inv.setItem(6 row 1, previous)
@@ -78,7 +74,7 @@ interface UIFactoryPaginated : UIFactory {
 
 
     override fun debugDetails() {
-        BukkitPlugin.plugin.debug("total details: ${paginatedCaches.map { (g, l) -> "${g.name} => ${l.map { i -> i.contents.map { it?.toString() ?: "null" } }}" }}")
+        LegendGuild.debug("total details: ${paginatedCaches.map { (g, l) -> "${g.name} => ${l.map { i -> i.contents.map { it?.toString() ?: "null" } }}" }}")
     }
 
     fun customFilter(guild: Guild, item: ItemStack): Boolean = true
@@ -88,7 +84,7 @@ interface UIFactoryPaginated : UIFactory {
                 6 row 1 to Clicker(previous) { player, _ ->
                     val iterator = getIterator(player)
                     if (iterator.hasPrevious() && iterator.previousIndex() > 0) {
-                        BukkitPlugin.plugin.debug("jumped to previous page")
+                        LegendGuild.debug("jumped to previous page")
                         UIManager.openUI(player, iterator.previous())
                     } else {
                         player.sendMessage(Lang.Page["no-previous"])
@@ -97,7 +93,7 @@ interface UIFactoryPaginated : UIFactory {
                 6 row 9 to Clicker(next) { player, _ ->
                     val iterator = getIterator(player)
                     if (iterator.hasNext()) {
-                        BukkitPlugin.plugin.debug("jumped to next page")
+                        LegendGuild.debug("jumped to next page")
                         UIManager.openUI(player, iterator.next())
                     } else {
                         player.sendMessage(Lang.Page["no-next"])
