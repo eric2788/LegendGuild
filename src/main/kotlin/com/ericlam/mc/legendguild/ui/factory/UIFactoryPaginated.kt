@@ -103,26 +103,32 @@ interface UIFactoryPaginated : UIFactory {
 
 
     companion object Utils {
-        val previous = UIManager.p.itemStack(materialHead, display = "&e上一頁").apply {
-            itemMeta = itemMeta.toSkullMeta("eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMWI2MTQwYWYzMmNiMzY0ZDliZTNiOTRlOTMwODFkNmNmYzhjMjdkM2NmZTBiNGRkNDVlNzg1MjI1ZWIifX19")
-        }.let {
-            val nbt = NBTItem(it)
-            nbt.setBoolean("unmovable", true)
-            nbt.item!!
+        val previous by lazy {
+            makeHead(display = "&e上一頁").apply {
+                itemMeta = itemMeta.toSkullMeta("eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvMWI2MTQwYWYzMmNiMzY0ZDliZTNiOTRlOTMwODFkNmNmYzhjMjdkM2NmZTBiNGRkNDVlNzg1MjI1ZWIifX19")
+            }.let {
+                val nbt = NBTItem(it)
+                nbt.setBoolean("unmovable", true)
+                nbt.item!!
+            }
         }
 
-        val next = UIManager.p.itemStack(materialHead, display = "&e下一頁").apply {
-            itemMeta = itemMeta.toSkullMeta("eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZmNhODQyNjdjYjVhMzdkNjk5YWJlN2Q2YTAzMTc4ZGUwODlkN2NmMmU3MjZmMzdkYTNmZTk5N2ZkNyJ9fX0=")
-        }.let {
-            val nbt = NBTItem(it)
-            nbt.setBoolean("unmovable", true)
-            nbt.item!!
+        val next by lazy {
+            makeHead("&e下一頁").apply {
+                itemMeta = itemMeta.toSkullMeta("eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvZmNhODQyNjdjYjVhMzdkNjk5YWJlN2Q2YTAzMTc4ZGUwODlkN2NmMmU3MjZmMzdkYTNmZTk5N2ZkNyJ9fX0=")
+            }.let {
+                val nbt = NBTItem(it)
+                nbt.setBoolean("unmovable", true)
+                nbt.item!!
+            }
         }
 
-        val decorate = UIManager.p.itemStack(materialGlassPane).let {
-            val nbt = NBTItem(it)
-            nbt.setBoolean("unmovable", true)
-            nbt.item!!
+        val decorate by lazy {
+            UIManager.p.itemStack(materialGlassPane).let {
+                val nbt = NBTItem(it)
+                nbt.setBoolean("unmovable", true)
+                nbt.item!!
+            }
         }
     }
 }

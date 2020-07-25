@@ -3,7 +3,7 @@ package com.ericlam.mc.legendguild.ui.factory.request
 import com.ericlam.mc.kotlib.Clicker
 import com.ericlam.mc.legendguild.Lang
 import com.ericlam.mc.legendguild.LegendGuild
-import com.ericlam.mc.legendguild.materialHead
+import com.ericlam.mc.legendguild.makeHead
 import com.ericlam.mc.legendguild.ui.UIManager
 import com.ericlam.mc.legendguild.ui.factory.MainUI
 import com.ericlam.mc.legendguild.ui.factory.UIFactory
@@ -20,7 +20,9 @@ object RequestUI : UIFactory {
 
     private val request = UIManager.p.itemStack(Material.PAPER, display = "&e你的委託")
 
-    private val job = UIManager.p.itemStack(materialHead, display = "&e你的接單")
+    private val job = makeHead(
+            display = "&e你的接單"
+    )
 
     override fun getUI(bPlayer: OfflinePlayer): Inventory? {
         return invCaches[bPlayer] ?: let {

@@ -4,7 +4,7 @@ maxChar: 6
 skillValue: "%level% * 5"
 lossExp: "%level% * 3"
 materials:
-  head: SKULL
+  head: SKULL_ITEM
   glassPane: STAINED_GLASS_PANE
   leash: LEASH
 leaderUpdate: 600

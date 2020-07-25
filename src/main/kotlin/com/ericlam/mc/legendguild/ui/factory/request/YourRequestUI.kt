@@ -109,7 +109,7 @@ object YourRequestUI : UIFactory {
                 lore = item.goal.map { it.translateColorCode() }
         )
 
-        val owner = UIManager.p.itemStack(materialHead, display = "接手者: ${item.taken?.let { Bukkit.getOfflinePlayer(it) }?.name ?: "沒有人"}")
+        val owner = makeHead(display = "接手者: ${item.taken?.let { Bukkit.getOfflinePlayer(it) }?.name ?: "沒有人"}")
         inventory.setItem(0, info)
         inventory.setItem(6, owner)
     }

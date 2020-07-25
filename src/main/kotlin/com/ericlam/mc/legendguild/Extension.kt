@@ -1,5 +1,6 @@
 package com.ericlam.mc.legendguild
 
+import com.destroystokyo.paper.profile.CraftPlayerProfile
 import com.ericlam.mc.kotlib.bukkit.BukkitPlugin
 import com.ericlam.mc.kotlib.msgFormat
 import com.ericlam.mc.kotlib.not
@@ -47,22 +48,36 @@ import java.util.concurrent.ConcurrentHashMap
 import kotlin.collections.set
 
 fun OfflinePlayer.leaveGuild(): Boolean {
-    val gp = this.guildPlayer ?: return false
+    val gp = this.guildPlayer ?: let {
+        LegendGuild.debug("guild player not exist")
+        return false
+    }
     return if (gp.role != GuildPlayer.Role.POPE) {
-        UIManager.clearCache(this)
         LegendGuild.guildPlayerController.delete(this.uniqueId)
-        player?.closeInventory()
+        (this as? Player)?.closeInventory()?.also {
+            LegendGuild.debug("successfully closed inventory for $name")
+        } ?: also {
+            LegendGuild.debug("player $name is not online, close inventory failed")
+        }
+        UIManager.clearCache(this)
         true
     } else {
-        val list = LegendGuild.guildPlayerController.find { guild == name }.mapNotNull { Bukkit.getOfflinePlayer(it.uuid) }
-        list.forEach { UIManager.clearCache(it) }
+        val list = LegendGuild.guildPlayerController.find { guild == gp.guild }.mapNotNull { Bukkit.getOfflinePlayer(it.uuid) }
+        LegendGuild.debug("list size: ${list.size}, player in guild $name")
         return if (LegendGuild.guildController.delete(gp.guild)) {
+            LegendGuild.debug("delete guild ${gp.guild} successful")
             list.forEach {
-                it.player?.closeInventory()
+                (it as? Player)?.closeInventory()?.also {
+                    LegendGuild.debug("successfully closed inventory for $name")
+                } ?: also {
+                    LegendGuild.debug("player $name is not online, close inventory failed")
+                }
                 it.notify(Lang["guild-deleted"])
+                UIManager.clearCache(it)
             }
             true
         } else {
+            LegendGuild.debug("delete guild ${gp.guild} unsuccessful")
             false
         }
     }
@@ -145,20 +160,13 @@ fun OfflinePlayer.toSkull(lore: OfflinePlayer.() -> List<String> = { listOf() })
 }
 
 fun ItemMeta.toSkullMeta(skin: String): ItemMeta {
-    val profile = GameProfile(UUID.randomUUID(), null)
-    profile.properties.put("textures", Property("textures", skin))
     if (this !is SkullMeta) {
         Bukkit.getLogger().warning("This item ${this.displayName} is not skull meta!")
         return this
     }
-    try {
-        this::class.java.getDeclaredField("profile").also {
-            it.isAccessible = true
-            it.set(this, profile)
-        }
-    } catch (e: Exception) {
-        Bukkit.getLogger().warning("Create Skull Item with skin ($skin) failed ( ${e::class.simpleName} | ${e.message} )")
-    }
+    val profile = GameProfile(UUID.randomUUID(), null)
+    profile.properties.put("textures", Property("textures", skin))
+    this.playerProfile = CraftPlayerProfile(profile)
     return this
 }
 
@@ -306,11 +314,17 @@ val OfflinePlayer.joinerSkull: ItemStack
         )
     }
 
+fun makeHead(display: String, lore: List<String> = listOf()): ItemStack {
+    return BukkitPlugin.plugin.itemStack(materialHead,
+            display = display, lore = lore).apply {
+        if (UIManager.p.utils.currentMCVersion.startsWith("1.12")) this.durability = 3
+    }
+}
+
 private val OfflinePlayer.skullItem: ItemStack
     get() {
         return skullMap[uniqueId] ?: let {
-            val item = BukkitPlugin.plugin.itemStack(LegendGuild.config.materials.head,
-                    display = "§e$name")
+            val item = makeHead("§e$name")
             item.itemMeta = item.itemMeta.toSkullMeta(skinCache[uniqueId] ?: steveSkin)
             val nbtItem = NBTItem(item)
             nbtItem.setString("guild.head.owner", uniqueId.toString())

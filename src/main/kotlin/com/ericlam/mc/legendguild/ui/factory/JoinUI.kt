@@ -36,11 +36,9 @@ object JoinUI : UIFactoryPaginated {
                     "&b等級: ${guild.currentLevel}"
             )
             val pope = guild.members.find { it.role == GuildPlayer.Role.POPE }
-            val item = UIManager.p.itemStack(materialHead,
-                    display = "&a${guild.name}",
-                    lore = lore
-            ).apply {
-                itemMeta = itemMeta.toSkullMeta(pope?.skinValue ?: steveSkin)
+            val item = makeHead(display = "&a${guild.name}",
+                    lore = lore).apply {
+                this.itemMeta = itemMeta.toSkullMeta(pope?.skinValue ?: steveSkin)
             }
             val nbt = NBTItem(item)
             nbt.setString("guild.join", guild.name)

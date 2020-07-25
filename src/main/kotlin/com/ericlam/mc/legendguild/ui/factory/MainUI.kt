@@ -62,11 +62,7 @@ object MainUI : UIFactory {
             lore = listOf("點擊領取")
     )
 
-    private val request = p.itemStack(
-            material = materialHead,
-            display = "&a委託與接單",
-            lore = listOf("點擊打開")
-    )
+    private val request = makeHead(display = "&a委託與接單", lore = listOf("點擊打開"))
 
     private object Admin {
         val salarySet = p.itemStack(
@@ -81,11 +77,7 @@ object MainUI : UIFactory {
                 lore = listOf("點擊打開")
         )
 
-        val promote = p.itemStack(
-                material = materialHead,
-                display = "&e晉升宗門成員",
-                lore = listOf("點擊打開")
-        )
+        val promote = makeHead(display = "&e晉升宗門成員", lore = listOf("點擊打開"))
 
         val publicStatus = p.itemStack(
                 material = Material.EMERALD_BLOCK,
@@ -107,8 +99,11 @@ object MainUI : UIFactory {
     }
 
     override fun getUI(bPlayer: OfflinePlayer): Inventory? {
+        debugDetails()
         return invCaches[bPlayer] ?: let {
             val player = bPlayer.guildPlayer ?: return null
+
+            LegendGuild.debug("${bPlayer.name} guild player is exist = { $player }")
 
             return p.createGUI(6, "&e宗門界面",
                     fills = mapOf(
@@ -202,8 +197,7 @@ object MainUI : UIFactory {
                         "&e外門弟子:&f ${guild.members.filter { it.role == GuildPlayer.Role.OUT_DISCIPLE }.size} 個"
                 )
         )
-        val member = p.itemStack(
-                material = materialHead,
+        val member = makeHead(
                 display = "&e公會總人數",
                 lore = listOf("&7${guild.members.size} 人")
         )

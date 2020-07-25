@@ -48,10 +48,12 @@ object UIManager {
     }
 
     fun clearCache(p: OfflinePlayer) {
-        cachesList.filter { ui -> ui.invCaches.containsKey(p) }.forEach { ui -> ui.invCaches.remove(p) }
-        p.guild?.also { g -> cachesList.filter { ui -> ui.guildInvCaches.containsKey(g) }.forEach { ui -> ui.guildInvCaches.remove(g) } }
-        p.guild?.also { g -> cachesList.filter { ui -> ui is UIFactoryPaginated && ui.paginatedCaches.containsKey(g) }.forEach { ui -> (ui as UIFactoryPaginated).paginatedCaches.remove(g) } }
-        cachesList.filter { ui -> ui is UIFactoryPaginated && ui.pageCache.containsKey(p) }.forEach { ui -> (ui as UIFactoryPaginated).pageCache.remove(p) }
+        cachesList.forEach { ui ->
+            ui.invCaches.remove(p)
+            (ui as? UIFactoryPaginated)?.pageCache?.remove(p)
+        }
+        MainUI.invCaches.remove(p)
+        MainUI.guildInvCaches.remove(p.guild)
     }
 
     fun openUI(p: Player, inv: UIFactory) {
